@@ -13,7 +13,7 @@ application id is: application_1566180955559_0336
 
 ## Question 3
 
-7 mappers ran in parallel
+14 mappers ran in parallel
 
 
 ## Question 4
