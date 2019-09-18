@@ -17,9 +17,12 @@
 package ca.uwaterloo.cs451.a1;
 
 import io.bespin.java.util.Tokenizer;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -42,14 +45,17 @@ import tl.lin.data.pair.PairOfStrings;
 import tl.lin.data.pair.PairOfFloatInt;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+
 
 public class PairsPMI  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(PairsPMI.class);
@@ -154,7 +160,7 @@ public class PairsPMI  extends Configured implements Tool {
   }
 
   private static final class MyReducer2 extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, PairofFloatInt> {
+      Reducer<PairOfStrings, FloatWritable, PairOfStrings, PairOfFloatInt> {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
     private static HashMap<String, Integer> wordCounts = new HashMap<>();
 
@@ -173,16 +179,16 @@ public class PairsPMI  extends Configured implements Tool {
        throw new IOException("Cannot open file");
       }
 
-      String line = reader.readLine();
+      String line = br.readLine();
       while (line != null) {
                String[] words = line.split("\\s+");
                if (words.length == 2) {
                    wordCounts.put(words[0], Integer.parseInt(words[1]));
                }
 
-               line = reader.readLine();
+               line = br.readLine();
            }
-           reader.close();
+           br.close();
     }
 
     @Override
@@ -259,12 +265,14 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
     //Job 1
-    LOG.info("Tool name: " + ComputeBigramRelativeFrequencyPairs.class.getSimpleName());
+    LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
     LOG.info(" - threshold: " + args.threshold);
+
+    String intermediatePath = "pairs_intermediate";
 
     Configuration conf = getConf();
     conf.set("threshold", Integer.toString(args.threshold));
