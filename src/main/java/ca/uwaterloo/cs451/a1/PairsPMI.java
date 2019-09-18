@@ -213,7 +213,7 @@ public class PairsPMI  extends Configured implements Tool {
 
         float pmi = (float) Math.log10(1.0f * sum * total / (leftVal * rightVal));
 
-        VALUE.set(pmi, sum);
+        VALUE.set(pmi, (int)sum);
         context.write(key, VALUE);
       }
     }
