@@ -121,7 +121,7 @@ public class PairsPMI  extends Configured implements Tool {
       int numWords = 0;
       for (String word : tokens) {
         numWords++;
-        if (!wordOccur.contanins(word)) {
+        if (!wordOccur.contains(word)) {
           wordOccur.add(word);
         }
         if (numWords >= WORD_LIMIT) {
