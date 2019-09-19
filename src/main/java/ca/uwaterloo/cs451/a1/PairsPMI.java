@@ -211,10 +211,12 @@ public class PairsPMI  extends Configured implements Tool {
         Integer leftVal = wordCounts.get(left);
         Integer rightVal = wordCounts.get(right);
 
-        float pmi = (float) Math.log10(1.0f * sum * total / (leftVal * rightVal));
+        if (totalVal != null && leftVal != null && rightVal != null) {
+          float pmi = (float) Math.log10(1.0f * sum * total / (leftVal * rightVal));
 
-        VALUE.set(pmi, (int)sum);
-        context.write(key, VALUE);
+          VALUE.set(pmi, (int)sum);
+          context.write(key, VALUE);
+        }
       }
     }
   }
