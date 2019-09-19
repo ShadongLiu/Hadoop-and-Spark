@@ -164,32 +164,32 @@ public class PairsPMI  extends Configured implements Tool {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
     private static HashMap<String, Integer> wordCounts = new HashMap<>();
 
-    @Override
-    public void setup(Context context) throws IOException, InterruptedException {
-      FileSystem fs = FileSystem.get(context.getConfiguration());
-      Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
-
-      BufferedReader br = null;
-      try{
-       FSDataInputStream is = fs.open(intermediatePath);
-       InputStreamReader isr = new InputStreamReader(is, "UTF-8");
-       br = new BufferedReader(isr);
-
-      } catch(FileNotFoundException e){
-       throw new IOException("Cannot open file");
-      }
-
-      String line = br.readLine();
-      while (line != null) {
-               String[] words = line.split("\\s+");
-               if (words.length == 2) {
-                   wordCounts.put(words[0], Integer.parseInt(words[1]));
-               }
-
-               line = br.readLine();
-           }
-           br.close();
-    }
+    // @Override
+    // public void setup(Context context) throws IOException, InterruptedException {
+    //   FileSystem fs = FileSystem.get(context.getConfiguration());
+    //   Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
+    //
+    //   BufferedReader br = null;
+    //   try{
+    //    FSDataInputStream is = fs.open(intermediatePath);
+    //    InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+    //    br = new BufferedReader(isr);
+    //
+    //   } catch(FileNotFoundException e){
+    //    throw new IOException("Cannot open file");
+    //   }
+    //
+    //   String line = br.readLine();
+    //   while (line != null) {
+    //            String[] words = line.split("\\s+");
+    //            if (words.length == 2) {
+    //                wordCounts.put(words[0], Integer.parseInt(words[1]));
+    //            }
+    //
+    //            line = br.readLine();
+    //        }
+    //        br.close();
+    // }
 
     @Override
     public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
@@ -245,7 +245,7 @@ public class PairsPMI  extends Configured implements Tool {
     boolean textOutput = false;
 
     @Option(name = "-threshold", metaVar = "[num]", usage = "threshold of co-occurrence pairs")
-    int threshold = 1;
+    int threshold = 10;
   }
 
   /**
@@ -267,7 +267,7 @@ public class PairsPMI  extends Configured implements Tool {
     //Job 1
     LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
-    LOG.info(" - output path: " + args.output);
+    LOG.info(" - output path: " + intermediatePath);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
     LOG.info(" - threshold: " + args.threshold);
@@ -300,6 +300,10 @@ public class PairsPMI  extends Configured implements Tool {
     // Delete the output directory if it exists already.
     Path intermediateDir = new Path(intermediatePath);
     FileSystem.get(getConf()).delete(intermediateDir, true);
+
+    long startTime = System.currentTimeMillis();
+    job.waitForCompletion(true);
+    System.out.println("Job one Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
     //Job 2
     LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
@@ -338,8 +342,8 @@ public class PairsPMI  extends Configured implements Tool {
     FileSystem.get(getConf()).delete(outputDir, true);
 
     long startTime = System.currentTimeMillis();
-    job.waitForCompletion(true);
-    System.out.println("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+    jobTwo.waitForCompletion(true);
+    System.out.println("Job two Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
     return 0;
   }
