@@ -164,32 +164,32 @@ public class PairsPMI  extends Configured implements Tool {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
     private static HashMap<String, Integer> wordCounts = new HashMap<>();
 
-    // @Override
-    // public void setup(Context context) throws IOException, InterruptedException {
-    //   FileSystem fs = FileSystem.get(context.getConfiguration());
-    //   Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
-    //
-    //   BufferedReader br = null;
-    //   try{
-    //    FSDataInputStream is = fs.open(intermediatePath);
-    //    InputStreamReader isr = new InputStreamReader(is, "UTF-8");
-    //    br = new BufferedReader(isr);
-    //
-    //   } catch(FileNotFoundException e){
-    //    throw new IOException("Cannot open file");
-    //   }
-    //
-    //   String line = br.readLine();
-    //   while (line != null) {
-    //            String[] words = line.split("\\s+");
-    //            if (words.length == 2) {
-    //                wordCounts.put(words[0], Integer.parseInt(words[1]));
-    //            }
-    //
-    //            line = br.readLine();
-    //        }
-    //        br.close();
-    // }
+    @Override
+    public void setup(Context context) throws IOException, InterruptedException {
+      FileSystem fs = FileSystem.get(context.getConfiguration());
+      Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
+
+      BufferedReader br = null;
+      try{
+       FSDataInputStream is = fs.open(intermediatePath);
+       InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+       br = new BufferedReader(isr);
+
+      } catch(FileNotFoundException e){
+       throw new IOException("Cannot open file");
+      }
+
+      String line = br.readLine();
+      while (line != null) {
+               String[] words = line.split("\\s+");
+               if (words.length == 2) {
+                   wordCounts.put(words[0], Integer.parseInt(words[1]));
+               }
+
+               line = br.readLine();
+           }
+           br.close();
+    }
 
     @Override
     public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
