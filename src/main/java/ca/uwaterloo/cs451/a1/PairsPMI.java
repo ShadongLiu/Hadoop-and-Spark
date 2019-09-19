@@ -129,7 +129,7 @@ public class PairsPMI  extends Configured implements Tool {
         }
       }
 
-      for (int i = 0; i < wordOccur.size(); i++) {
+      for (int i = 0; i < wordOccur.size() - 1; i++) {
         for (int j = i + 1; j < wordOccur.size(); j++) {
           Pair.set(wordOccur.get(i), wordOccur.get(j));
           context.write(Pair, ONE);
