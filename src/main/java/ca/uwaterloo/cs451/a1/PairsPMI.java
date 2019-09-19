@@ -265,6 +265,7 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
     //Job 1
+    String intermediatePath = args.output + "-tmp";
     LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + intermediatePath);
@@ -272,7 +273,7 @@ public class PairsPMI  extends Configured implements Tool {
     LOG.info(" - text output: " + args.textOutput);
     LOG.info(" - threshold: " + args.threshold);
 
-    String intermediatePath = "pairs_intermediate";
+
 
     Configuration conf = getConf();
     conf.set("threshold", Integer.toString(args.threshold));
@@ -341,7 +342,7 @@ public class PairsPMI  extends Configured implements Tool {
     Path outputDir = new Path(args.output);
     FileSystem.get(getConf()).delete(outputDir, true);
 
-    long startTime = System.currentTimeMillis();
+    //long startTime = System.currentTimeMillis();
     jobTwo.waitForCompletion(true);
     System.out.println("Job two Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
