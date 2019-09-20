@@ -171,7 +171,7 @@ public class StripesPMI  extends Configured implements Tool {
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
-      FileStatus[] status = fs.globStatus(new Path("tmp/part-r-*"));
+      FileStatus[] status = fs.globStatus(new Path("tmp2/part-r-*"));
       for (FileStatus file : status) {
         FSDataInputStream is = fs.open(file.getPath());
         InputStreamReader isr = new InputStreamReader(is, "UTF-8");
@@ -261,7 +261,7 @@ public class StripesPMI  extends Configured implements Tool {
     }
 
     //Job 1
-    String intermediatePath = "tmp/";
+    String intermediatePath = "tmp2/";
     LOG.info("Tool name: " + StripesPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
