@@ -145,14 +145,14 @@ public class PairsPMI  extends Configured implements Tool {
 
 
   private static final class MyCombiner extends
-      Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
-    private static final IntWritable SUM = new IntWritable();
+      Reducer<PairOfStrings, IntWritable, PairOfStrings, FloatWritable> {
+    private static final FloatWritable SUM = new IntWritable();
 
     @Override
-    public void reduce(PairOfStrings key, Iterable<IntWritable> values, Context context)
+    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
         throws IOException, InterruptedException {
-      int sum = 0;
-      Iterator<IntWritable> iter = values.iterator();
+      float sum = 0.0f;
+      Iterator<FloatWritable> iter = values.iterator();
       while (iter.hasNext()) {
         sum += iter.next().get();
       }
@@ -162,7 +162,7 @@ public class PairsPMI  extends Configured implements Tool {
   }
 
   private static final class MyReducer2 extends
-      Reducer<PairOfStrings, IntWritable, PairOfStrings, PairOfFloatInt> {
+      Reducer<PairOfStrings, FloatWritable, PairOfStrings, PairOfFloatInt> {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
     private static HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
 
@@ -209,10 +209,10 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
     @Override
-    public void reduce(PairOfStrings key, Iterable<IntWritable> values, Context context)
+    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
         throws IOException, InterruptedException {
-      int sum = 0;
-      Iterator<IntWritable> iter = values.iterator();
+      float sum = 0.0f;
+      Iterator<FloatWritable> iter = values.iterator();
 
       Configuration conf = context.getConfiguration();
       int threshold = conf.getInt("threshold",0);
