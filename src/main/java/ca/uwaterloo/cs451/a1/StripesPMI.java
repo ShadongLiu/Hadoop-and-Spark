@@ -44,7 +44,7 @@ import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 import tl.lin.data.pair.PairOfStrings;
 import tl.lin.data.pair.PairOfFloatInt;
-import tl.lin.data.map.HMapStIW;
+import tl.lin.data.map.HMapStFW;
 import tl.lin.data.map.HashMapWritable;
 
 import java.io.IOException;
@@ -166,7 +166,7 @@ public class StripesPMI  extends Configured implements Tool {
     private static final Text KEY = new Text(); //(left part of the final output)
     private static final HashMapWritable MAP = new HashMapWritable(); //(right part of the final output)
 
-    private static final Map<String, Integer> wordCount = new HashMap<String, Integer>();
+    private static final Map<String, Integer> wordCounts = new HashMap<String, Integer>();
 
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
@@ -239,6 +239,9 @@ public class StripesPMI  extends Configured implements Tool {
 
     @Option(name = "-textOutput", usage = "use TextOutputFormat (otherwise, SequenceFileOutputFormat)")
     boolean textOutput = false;
+
+    @Option(name = "-threshold", metaVar = "[num]", usage = "threshold of co-occurrence pairs")
+    int threshold = 10;
   }
 
   /**
