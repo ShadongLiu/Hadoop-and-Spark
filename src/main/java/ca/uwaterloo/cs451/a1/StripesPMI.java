@@ -209,11 +209,11 @@ public class StripesPMI  extends Configured implements Tool {
       for (String term: map.keySet()) {
         Integer termSum = wordCounts.get(term);
         if (map.get(term) >= threshold) {
-          int sum = map.get(term);
+          sum = map.get(term);
           if (total != null && eachKeySum != null && termSum != null) {
             float pmi = (float) Math.log10(1.0f * sum * total / (eachKeySum * termSum));
             PairOfFloatInt pmi_count_pair = new PairOfFloatInt();
-            pmi_count_pair.set(pmi, sum);
+            pmi_count_pair.set(pmi, (int)sum);
             MAP.put(term, pmi_count_pair);
         }
       }
@@ -333,7 +333,7 @@ public class StripesPMI  extends Configured implements Tool {
     jobTwo.setReducerClass(MyReducer2.class);
 
     // Delete the output directory if it exists already.
-    Path outputDir = new Path(args.output);
+    outputDir = new Path(args.output);
     FileSystem.get(getConf()).delete(outputDir, true);
 
     //long startTime = System.currentTimeMillis();
