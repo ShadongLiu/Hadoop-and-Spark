@@ -113,34 +113,34 @@ public class StripesPMI  extends Configured implements Tool {
  private static final class MyMapper2 extends Mapper<LongWritable, Text, Text, HMapStFW> {
    //remember HMapStFW is a string-float key-value pair
     private static final Text KEY = new Text();
+    private static final HMapStFW MAP = new HMapStFW();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      Map<String, HMapStFW> stripes = new HashMap<>();
+      //Map<String, HMapStFW> stripes = new HashMap<>();
       List<String> tokens = Tokenizer.tokenize(value.toString());
-
-      if (tokens.size() < 2) return;
-      for (int i = 1; i < tokens.size(); i++) {
-        String prev = tokens.get(i-1);
-        String cur = tokens.get(i);
-        if (stripes.containsKey(prev)) {
-          HMapStFW stripe = stripes.get(prev);
-          if (stripe.containsKey(cur)) {
-            stripe.put(cur, stripe.get(cur)+1.0f);
-          } else {
-            stripe.put(cur, 1.0f);
-          }
-        } else {
-          HMapStFW stripe = new HMapStFW();
-          stripe.put(cur, 1.0f);
-          stripes.put(prev, stripe);
+      ArrayList<String> wordOccur = new ArrayList<>();
+      int numWords = 0;
+      for (String word : tokens) {
+        numWords++;
+        if (!wordOccur.contains(word)) {
+          wordOccur.add(word);
+        }
+        if (numWords >= WORD_LIMIT) {
+          break;
         }
       }
-
-      for (String t : stripes.keySet()) {
-        KEY.set(t);
-        context.write(KEY, stripes.get(t));
+      for (int i = 0; i < wordOccur.size(); i++) {
+        MAP.clear();
+        KEY.set(wordOccur.get(i));
+        for (int j = 0; j < wordOccur.size(); j++) {
+          if (i == j) {
+            continue;
+          }
+          MAP.put(wordOccur.get(j), 1f);
+        }
+        context.write(KEY,MAP);
       }
     }
   }
