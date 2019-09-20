@@ -281,7 +281,7 @@ public class StripesPMI  extends Configured implements Tool {
     job.setNumReduceTasks(args.numReducers);
 
     FileInputFormat.setInputPaths(job, new Path(args.input));
-    FileOutputFormat.setOutputPath(job, new Path(args.output));
+    FileOutputFormat.setOutputPath(job, new Path(intermediatePath));
 
     job.setMapOutputKeyClass(Text.class);
     job.setMapOutputValueClass(IntWritable.class);

@@ -288,7 +288,6 @@ public class PairsPMI  extends Configured implements Tool {
     String intermediatePath = "tmp/";
     LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
-    //LOG.info(" - output path: " + intermediatePath);
     LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
