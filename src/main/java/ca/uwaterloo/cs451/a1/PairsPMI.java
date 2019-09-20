@@ -240,7 +240,7 @@ public class PairsPMI  extends Configured implements Tool {
 
   private static final class MyPartitioner extends Partitioner<PairOfStrings, IntWritable> {
     @Override
-    public int getPartition(PairOfStrings key, FloatWritable value, int numReduceTasks) {
+    public int getPartition(PairOfStrings key, IntWritable value, int numReduceTasks) {
       return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
     }
   }
