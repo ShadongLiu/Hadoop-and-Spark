@@ -110,7 +110,7 @@ public class PairsPMI  extends Configured implements Tool {
 
 
 
-  private static final class MyMapper2 extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
+  private static final class MyMapper2 extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
     private static final IntWritable ONE = new IntWritable(1);
     private static final PairOfStrings Pair = new PairOfStrings();
 
@@ -161,7 +161,7 @@ public class PairsPMI  extends Configured implements Tool {
   }
 
   private static final class MyReducer2 extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, PairOfFloatInt> {
+      Reducer<PairOfStrings, IntWritable, PairOfStrings, PairOfFloatInt> {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
     private static HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
 
@@ -170,26 +170,41 @@ public class PairsPMI  extends Configured implements Tool {
       FileSystem fs = FileSystem.get(context.getConfiguration());
       //Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
 
-      BufferedReader br = null;
-      try{
-       FSDataInputStream is = fs.open(intermediatePath);
-       InputStreamReader isr = new InputStreamReader(is, "UTF-8");
-       br = new BufferedReader(isr);
-
-      } catch(FileNotFoundException e){
-       throw new IOException("Cannot open file");
+      //BufferedReader br = null;
+      // try{
+      //  FSDataInputStream is = fs.open(intermediatePath);
+      //  InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+      //  br = new BufferedReader(isr);
+      //
+      // } catch(FileNotFoundException e){
+      //  throw new IOException("Cannot open file");
+      // }
+      //
+      // String line = br.readLine();
+      // while (line != null) {
+      //          String[] words = line.split("\\s+");
+      //          if (words.length == 2) {
+      //              wordCounts.put(words[0], Integer.parseInt(words[1]));
+      //          }
+      //
+      //          line = br.readLine();
+      //      }
+      //      br.close();
+      FileStatus[] status = fs.globStatus(new Path("tmp/part-r-*"));
+      for (FileStatus file : status) {
+        FSDataInputStream is = fs.open(file.getPath());
+        InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+        BufferedReader br = new BufferedReader(isr);
+        String line = br.readLine();
+        while (line != null) {
+          String[] data = line.split("\\s+");
+          if (data.length == 2) {
+            wordCounts.put(data[0], Integer.parseInt(data[1]));
+          }
+          line = br.readLine();
+        }
+        br.close();
       }
-
-      String line = br.readLine();
-      while (line != null) {
-               String[] words = line.split("\\s+");
-               if (words.length == 2) {
-                   wordCounts.put(words[0], Integer.parseInt(words[1]));
-               }
-
-               line = br.readLine();
-           }
-           br.close();
     }
 
     @Override
@@ -199,7 +214,7 @@ public class PairsPMI  extends Configured implements Tool {
       Iterator<IntWritable> iter = values.iterator();
 
       Configuration conf = context.getConfiguration();
-      int threshold = conf.getInt("threshold");
+      int threshold = conf.getInt("threshold",0);
 
       while (iter.hasNext()) {
         sum += iter.next().get();
@@ -268,10 +283,12 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
     //Job 1
-    String intermediatePath = args.output + "-tmp";
+    //String intermediatePath = args.output + "tmp";
+    String intermediatePath = "tmp/";
     LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
-    LOG.info(" - output path: " + intermediatePath);
+    //LOG.info(" - output path: " + intermediatePath);
+    LOG.info(" - output path: " + args.output);
     LOG.info(" - num reducers: " + args.numReducers);
     LOG.info(" - text output: " + args.textOutput);
     LOG.info(" - threshold: " + args.threshold);
