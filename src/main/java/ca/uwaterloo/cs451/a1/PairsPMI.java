@@ -145,7 +145,7 @@ public class PairsPMI  extends Configured implements Tool {
 
 
   private static final class MyCombiner extends
-      Reducer<PairOfStrings, IntWritable, PairOfStrings, FloatWritable> {
+      Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
     private static final FloatWritable SUM = new IntWritable();
 
     @Override
