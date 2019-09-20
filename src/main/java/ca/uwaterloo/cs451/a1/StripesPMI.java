@@ -295,8 +295,8 @@ public class StripesPMI  extends Configured implements Tool {
     job.setReducerClass(MyReducer.class);
 
     // Delete the output directory if it exists already.
-    Path outputDir = new Path(intermediatePath);
-    FileSystem.get(getConf()).delete(outputDir, true);
+    Path intermediateDir = new Path(intermediatePath);
+    FileSystem.get(getConf()).delete(intermediateDir, true);
 
     long startTime = System.currentTimeMillis();
     job.waitForCompletion(true);
