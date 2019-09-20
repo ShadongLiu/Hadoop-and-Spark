@@ -75,7 +75,8 @@ public class PairsPMI  extends Configured implements Tool {
       int numWords = 0;
       for (String word : tokens) {
         numWords++;
-        if (wordOccur.add(word)) {
+        if (!wordOccur.contains(word)) {
+          wordOccur.add(word);
           WORD.set(word);
           context.write(WORD,ONE);
         }
@@ -167,7 +168,7 @@ public class PairsPMI  extends Configured implements Tool {
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
-      Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
+      //Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
 
       BufferedReader br = null;
       try{
