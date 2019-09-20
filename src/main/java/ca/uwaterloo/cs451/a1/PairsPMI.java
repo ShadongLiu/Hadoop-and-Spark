@@ -111,7 +111,7 @@ public class PairsPMI  extends Configured implements Tool {
 
 
 
-  private static final class MyMapper2 extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
+  private static final class MyMapper2 extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
     private static final IntWritable ONE = new IntWritable(1);
     private static final PairOfStrings Pair = new PairOfStrings();
 
