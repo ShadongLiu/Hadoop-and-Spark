@@ -214,7 +214,7 @@ public class StripesPMI  extends Configured implements Tool {
             float pmi = (float) Math.log10(1.0f * sum * total / (eachKeySum * termSum));
             PairOfFloatInt pmi_count_pair = new PairOfFloatInt();
             pmi_count_pair.set(pmi, (int)sum);
-            MAP.put(term, pmi_count_pair);
+            MAP.put(new Text(term), pmi_count_pair);
         }
       }
       context.write(KEY, MAP);
