@@ -225,6 +225,7 @@ public class StripesPMI  extends Configured implements Tool {
       }
     }
   }
+}
 
   /**
    * Creates an instance of this tool.
