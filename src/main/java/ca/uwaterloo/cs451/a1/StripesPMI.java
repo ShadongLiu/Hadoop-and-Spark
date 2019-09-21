@@ -120,25 +120,29 @@ public class StripesPMI  extends Configured implements Tool {
         throws IOException, InterruptedException {
       //Map<String, HMapStFW> stripes = new HashMap<>();
       List<String> tokens = Tokenizer.tokenize(value.toString());
-      ArrayList<String> wordOccur = new ArrayList<>();
+      Set<String> wordOccur = new HashSet<String>();
       int numWords = 0;
       for (String word : tokens) {
         numWords++;
-        if (!wordOccur.contains(word)) {
-          wordOccur.add(word);
-        }
+        // if (!wordOccur.contains(word)) {
+        //   wordOccur.add(word);
+        // }
+        set.add(word);
         if (numWords >= WORD_LIMIT) {
           break;
         }
       }
-      for (int i = 0; i < wordOccur.size(); i++) {
+      String[] words = new String[set.size()];
+      words = set.toArray(words);
+      for (int i = 0; i < words.length; i++) {
         MAP.clear();
-        KEY.set(wordOccur.get(i));
-        for (int j = 0; j < wordOccur.size(); j++) {
+        KEY.set(words[i]);
+        for (int j = 0; j < words.length; j++) {
           if (i == j) {
             continue;
           }
-          MAP.put(wordOccur.get(j), 1f);
+          //MAP.put(wordOccur.get(j), 1f);
+          MAP.increment(words[j]);
         }
         context.write(KEY,MAP);
       }
@@ -210,14 +214,14 @@ public class StripesPMI  extends Configured implements Tool {
       for (String term: map.keySet()) {
         Integer termSum = wordCounts.get(term);
         if (map.get(term) >= threshold) {
-          //Text termWritable = new Text(term);
+          Text termWritable = new Text(term);
           sum = map.get(term);
           if (total != null && eachKeySum != null && termSum != null) {
             float pmi = (float) Math.log10(1.0f * sum * total / (eachKeySum * termSum));
             PairOfFloatInt pmi_count_pair = new PairOfFloatInt();
             pmi_count_pair.set(pmi, (int)sum);
-            //MAP.put(termWritable, pmi_count_pair);
-            MAP.put(new Text(term), pmi_count_pair);
+            MAP.put(termWritable, pmi_count_pair);
+            //MAP.put(new Text(term), pmi_count_pair);
         }
       }
       context.write(KEY, MAP);
