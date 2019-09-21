@@ -206,6 +206,7 @@ public class StripesPMI  extends Configured implements Tool {
       KEY.set(eachKey);
       Integer eachKeySum = wordCounts.get(eachKey);
       Integer total = wordCounts.get("abcdef");
+      MAP.clear();
       for (String term: map.keySet()) {
         Integer termSum = wordCounts.get(term);
         if (map.get(term) >= threshold) {
