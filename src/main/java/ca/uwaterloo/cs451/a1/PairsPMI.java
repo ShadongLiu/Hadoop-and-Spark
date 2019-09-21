@@ -296,6 +296,12 @@ public class PairsPMI  extends Configured implements Tool {
     job.setCombinerClass(MyReducer.class);
     job.setReducerClass(MyReducer.class);
 
+    job.getConfiguration().setInt("mapred.max.split.size", 1024 * 1024 * 32);
+    job.getConfiguration().set("mapreduce.map.memory.mb", "3072");
+    job.getConfiguration().set("mapreduce.map.java.opts", "-Xmx3072m");
+    job.getConfiguration().set("mapreduce.reduce.memory.mb", "3072");
+    job.getConfiguration().set("mapreduce.reduce.java.opts", "-Xmx3072m");
+
     // Delete the output directory if it exists already.
     Path intermediateDir = new Path(intermediatePath);
     FileSystem.get(getConf()).delete(intermediateDir, true);
@@ -335,6 +341,12 @@ public class PairsPMI  extends Configured implements Tool {
     jobTwo.setCombinerClass(MyCombiner.class);
     jobTwo.setReducerClass(MyReducer2.class);
     jobTwo.setPartitionerClass(MyPartitioner.class);
+
+    job.getConfiguration().setInt("mapred.max.split.size", 1024 * 1024 * 32);
+    job.getConfiguration().set("mapreduce.map.memory.mb", "3072");
+    job.getConfiguration().set("mapreduce.map.java.opts", "-Xmx3072m");
+    job.getConfiguration().set("mapreduce.reduce.memory.mb", "3072");
+    job.getConfiguration().set("mapreduce.reduce.java.opts", "-Xmx3072m");
 
     // Delete the output directory if it exists already.
     Path outputDir = new Path(args.output);
