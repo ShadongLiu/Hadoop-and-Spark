@@ -120,29 +120,25 @@ public class StripesPMI  extends Configured implements Tool {
         throws IOException, InterruptedException {
       //Map<String, HMapStFW> stripes = new HashMap<>();
       List<String> tokens = Tokenizer.tokenize(value.toString());
-      Set<String> wordOccur = new HashSet<String>();
+      ArrayList<String> wordOccur = new ArrayList<>();
       int numWords = 0;
       for (String word : tokens) {
         numWords++;
-        // if (!wordOccur.contains(word)) {
-        //   wordOccur.add(word);
-        // }
-        set.add(word);
+        if (!wordOccur.contains(word)) {
+          wordOccur.add(word);
+        }
         if (numWords >= WORD_LIMIT) {
           break;
         }
       }
-      String[] words = new String[set.size()];
-      words = set.toArray(words);
-      for (int i = 0; i < words.length; i++) {
+      for (int i = 0; i < wordOccur.size(); i++) {
         MAP.clear();
-        KEY.set(words[i]);
-        for (int j = 0; j < words.length; j++) {
+        KEY.set(wordOccur.get(i));
+        for (int j = 0; j < wordOccur.size(); j++) {
           if (i == j) {
             continue;
           }
-          //MAP.put(wordOccur.get(j), 1f);
-          MAP.increment(words[j]);
+          MAP.put(wordOccur.get(j), 1f);
         }
         context.write(KEY,MAP);
       }
@@ -224,7 +220,8 @@ public class StripesPMI  extends Configured implements Tool {
             //MAP.put(new Text(term), pmi_count_pair);
         }
       }
-      context.write(KEY, MAP);
+      if (MAP.size() > 0) {
+        context.write(KEY, MAP);
       }
     }
   }
