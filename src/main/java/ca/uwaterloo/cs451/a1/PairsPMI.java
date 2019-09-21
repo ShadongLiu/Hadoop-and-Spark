@@ -239,7 +239,7 @@ public class PairsPMI  extends Configured implements Tool {
     int numReducers = 1;
 
     @Option(name = "-textOutput", usage = "use TextOutputFormat (otherwise, SequenceFileOutputFormat)")
-    boolean textOutput = false;
+    boolean textOutput = true;
 
     @Option(name = "-threshold", metaVar = "[num]", usage = "threshold of co-occurrence pairs")
     int threshold = 10;
