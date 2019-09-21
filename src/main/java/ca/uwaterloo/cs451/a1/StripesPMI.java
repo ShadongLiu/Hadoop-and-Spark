@@ -146,6 +146,7 @@ public class StripesPMI  extends Configured implements Tool {
   }
 
 
+
   //combiner is to sum the all the values(floats) in the map for the same key
   private static final class MyCombiner extends Reducer<Text, HMapStFW, Text, HMapStFW> {
     @Override
@@ -198,12 +199,14 @@ public class StripesPMI  extends Configured implements Tool {
       while (iter.hasNext()) {
         map.plus(iter.next());
       }
+      //map now looks like {B:3, C:5} and key is A
 
       Configuration conf = context.getConfiguration();
       int threshold = conf.getInt("threshold",0);
 
-      String eachKey = key.toString();
-      KEY.set(eachKey);
+      String eachKey = key.toString();//A
+      //KEY.set(eachKey);//KEY is Text(A)
+
       Integer eachKeySum = wordCounts.get(eachKey);
       Integer total = wordCounts.get("abcdef");
       MAP.clear();
@@ -218,12 +221,12 @@ public class StripesPMI  extends Configured implements Tool {
             pmi_count_pair.set(pmi, (int)sum);
             MAP.put(termWritable, pmi_count_pair);
             //MAP.put(new Text(term), pmi_count_pair);
+          }
         }
       }
       if (MAP.size() > 0) {
-        context.write(KEY, MAP);
+        context.write(key, MAP);
       }
-    }
   }
 }
 
