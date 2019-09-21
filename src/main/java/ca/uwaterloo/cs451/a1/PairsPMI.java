@@ -169,28 +169,6 @@ public class PairsPMI  extends Configured implements Tool {
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
-      //Path intermediatePath = new Path("pairs_intermediate/part-r-00000");
-
-      //BufferedReader br = null;
-      // try{
-      //  FSDataInputStream is = fs.open(intermediatePath);
-      //  InputStreamReader isr = new InputStreamReader(is, "UTF-8");
-      //  br = new BufferedReader(isr);
-      //
-      // } catch(FileNotFoundException e){
-      //  throw new IOException("Cannot open file");
-      // }
-      //
-      // String line = br.readLine();
-      // while (line != null) {
-      //          String[] words = line.split("\\s+");
-      //          if (words.length == 2) {
-      //              wordCounts.put(words[0], Integer.parseInt(words[1]));
-      //          }
-      //
-      //          line = br.readLine();
-      //      }
-      //      br.close();
       FileStatus[] status = fs.globStatus(new Path("tmp/part-r-*"));
       for (FileStatus file : status) {
         FSDataInputStream is = fs.open(file.getPath());
