@@ -49,13 +49,7 @@ import tl.lin.data.map.HashMapWritable;
 
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
@@ -63,7 +57,7 @@ public class StripesPMI  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(StripesPMI.class);
   private static final int WORD_LIMIT = 40;
 
-  //First mapper to emit (Word, 1)
+  //First mapper to emit (A, 1)
   public static final class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
     private static final IntWritable ONE = new IntWritable(1);
     private static final Text WORD = new Text();

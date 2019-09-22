@@ -48,12 +48,7 @@ import tl.lin.data.pair.PairOfFloatInt;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Iterator;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
@@ -62,9 +57,8 @@ public class PairsPMI  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(PairsPMI.class);
   private static final int WORD_LIMIT = 40;
 
-  // Mapper: emits (token, 1) for every word occurrence.
+  // First mapper to emit (A, 1)
   public static final class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
-    // Reuse objects to save overhead of object creation.
     private static final IntWritable ONE = new IntWritable(1);
     private static final Text WORD = new Text();
 
@@ -72,33 +66,33 @@ public class PairsPMI  extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       List<String> tokens = Tokenizer.tokenize(value.toString());
+      //generate a set of unique words
       Set<String> wordOccur = new HashSet<>();
-      int numWords = 0;
+      int wordCount = 0;
       for (String word : tokens) {
-        numWords++;
+        wordCount++;
         if (!wordOccur.contains(word)) {
           wordOccur.add(word);
           WORD.set(word);
           context.write(WORD,ONE);
         }
-        if (numWords >= WORD_LIMIT) {
+        if (wordCount >= WORD_LIMIT) {
           break;
         }
       }
       //to count the number of lines in the file
-      WORD.set("abcdef");
+      WORD.set("a_line_counter");
       context.write(WORD, ONE);
       }
     }
 
-
+  //first reducer to emit(A, sum)
   public static final class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
       private static final IntWritable SUM = new IntWritable();
 
       @Override
       public void reduce(Text key, Iterable<IntWritable> values, Context context)
           throws IOException, InterruptedException {
-        // Sum up values.
         Iterator<IntWritable> iter = values.iterator();
         int sum = 0;
         while (iter.hasNext()) {
@@ -110,7 +104,7 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
 
-
+  //second mapper to emit(A, B) 1
   private static final class MyMapper2 extends Mapper<LongWritable, Text, PairOfStrings, FloatWritable> {
     private static final FloatWritable ONE = new FloatWritable(1);
     private static final PairOfStrings Pair = new PairOfStrings();
@@ -120,21 +114,23 @@ public class PairsPMI  extends Configured implements Tool {
         throws IOException, InterruptedException {
       List<String> tokens = Tokenizer.tokenize(value.toString());
       ArrayList<String> wordOccur = new ArrayList<>();
-      int numWords = 0;
+      int wordCount = 0;
       for (String word : tokens) {
-        numWords++;
+        wordCount++;
         if (!wordOccur.contains(word)) {
           wordOccur.add(word);
         }
-        if (numWords >= WORD_LIMIT) {
+        if (wordCount >= WORD_LIMIT) {
           break;
         }
       }
 
       for (int i = 0; i < wordOccur.size(); i++) {
         for (int j = i + 1; j < wordOccur.size(); j++) {
+          //get(A, B) 1
           Pair.set(wordOccur.get(i), wordOccur.get(j));
           context.write(Pair, ONE);
+          //get(B, A) 1
           Pair.set(wordOccur.get(j), wordOccur.get(i));
           context.write(Pair, ONE);
         }
@@ -143,7 +139,7 @@ public class PairsPMI  extends Configured implements Tool {
   }
 
 
-
+  //first combiner to emit (A, B) sum of this pair
   private static final class MyCombiner extends
       Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
     private static final FloatWritable SUM = new FloatWritable();
@@ -161,25 +157,33 @@ public class PairsPMI  extends Configured implements Tool {
     }
   }
 
+
   private static final class MyReducer2 extends
       Reducer<PairOfStrings, FloatWritable, PairOfStrings, PairOfFloatInt> {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
-    private static HashMap<String, Integer> wordCounts = new HashMap<String, Integer>();
+    private static HashMap<String, Integer> word_count_output = new HashMap<String, Integer>();
 
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
-      FileStatus[] status = fs.globStatus(new Path("tmp/part-r-*"));
-      for (FileStatus file : status) {
-        FSDataInputStream is = fs.open(file.getPath());
-        InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+      //array of output files for the first mapReduce job
+      FileStatus[] mr_outputs = fs.globStatus(new Path("tmp_for_paris/part-r-*"));
+
+
+      for (FileStatus file : mr_outputs) {
+        FSDataInputStream fsdis = fs.open(file.getPath());
+        InputStreamReader isr = new InputStreamReader(fsdis, "UTF-8");
         BufferedReader br = new BufferedReader(isr);
         String line = br.readLine();
+
         while (line != null) {
-          String[] data = line.split("\\s+");
-          if (data.length == 2) {
-            wordCounts.put(data[0], Integer.parseInt(data[1]));
+
+          String[] mr_data = line.split("\\s+");
+          if (mr_data.length == 2) {
+            //store pairs like (A, sum) into a variable
+            word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
           }
+          //read next line
           line = br.readLine();
         }
         br.close();
@@ -200,14 +204,14 @@ public class PairsPMI  extends Configured implements Tool {
       }
 
       if (sum >= threshold) {
-        String left = key.getLeftElement();
-        String right = key.getRightElement();
-        Integer total = wordCounts.get("abcdef");
-        Integer leftVal = wordCounts.get(left);
-        Integer rightVal = wordCounts.get(right);
+        String x = key.getLeftElement();//A
+        String y = key.getRightElement();//B
+        Integer total = word_count_output.get("a_line_counter");
+        Integer xVal = word_count_output.get(x);
+        Integer yVal = word_count_output.get(y);
 
         if (total != null && leftVal != null && rightVal != null) {
-          float pmi = (float) Math.log10(1.0f * sum * total / (leftVal * rightVal));
+          float pmi = (float) Math.log10(1.0f * sum * total / (xVal * yVal));
 
           VALUE.set(pmi, (int)sum);
           context.write(key, VALUE);
@@ -262,8 +266,7 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
     //Job 1
-    //String intermediatePath = args.output + "tmp";
-    String intermediatePath = "tmp/";
+    String intermediatePath = "tmp_for_paris/";
     LOG.info("Tool name: " + PairsPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
