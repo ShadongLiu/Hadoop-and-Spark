@@ -210,7 +210,7 @@ public class PairsPMI  extends Configured implements Tool {
         Integer xVal = word_count_output.get(x);
         Integer yVal = word_count_output.get(y);
 
-        if (total != null && leftVal != null && rightVal != null) {
+        if (total != null && xVal != null && yVal != null) {
           float pmi = (float) Math.log10(1.0f * sum * total / (xVal * yVal));
 
           VALUE.set(pmi, (int)sum);
