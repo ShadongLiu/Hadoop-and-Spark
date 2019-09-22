@@ -174,17 +174,17 @@ public class PairsPMI  extends Configured implements Tool {
         FSDataInputStream fsdis = fs.open(file.getPath());
         InputStreamReader isr = new InputStreamReader(fsdis, "UTF-8");
         BufferedReader br = new BufferedReader(isr);
-        String line = br.readLine();
+        String eachLine = br.readLine();
 
-        while (line != null) {
+        while (eachLine != null) {
 
           String[] mr_data = line.split("\\s+");
-          if (mr_data.length == 2) {
-            //store pairs like (A, sum) into a variable
-            word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
-          }
+
+          //store pairs like (A, sum) into a variable
+          word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
+
           //read next line
-          line = br.readLine();
+          eachLine = br.readLine();
         }
         br.close();
       }
