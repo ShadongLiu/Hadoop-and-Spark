@@ -196,7 +196,7 @@ public class PairsPMI  extends Configured implements Tool {
       Iterator<FloatWritable> iter = values.iterator();
 
       Configuration conf = context.getConfiguration();
-      int threshold = conf.getInt("threshold",0);
+      int threshold = conf.getInt("threshold",10);
 
       while (iter.hasNext()) {
         sum += iter.next().get();
@@ -210,6 +210,7 @@ public class PairsPMI  extends Configured implements Tool {
         Integer yVal = word_count_output.get(y);
 
         if (total != null && xVal != null && yVal != null) {
+          //simplified formula version
           float pmi = (float) Math.log10(1.0f * sum * total / (xVal * yVal));
 
           VALUE.set(pmi, (int)sum);
@@ -276,7 +277,7 @@ public class PairsPMI  extends Configured implements Tool {
 
 
     Configuration conf = getConf();
-    conf.set("threshold", Integer.toString(args.threshold));
+    conf.setInt("threshold", args.threshold);
     conf.set("intermediatePath", intermediatePath);
 
     Job job = Job.getInstance(getConf());
