@@ -215,7 +215,7 @@ public class StripesPMI  extends Configured implements Tool {
       Integer eachKeySum = word_count_output.get(eachKey);
       Integer total = word_count_output.get("abcdef");
 
-
+      MAP.clear();
       //co_occur is B C ... of the same key A
       for (String co_occur: map.keySet()) {
         //number of occurence of the co_occurence word (i.e:B)
@@ -235,11 +235,7 @@ public class StripesPMI  extends Configured implements Tool {
           }
         }
       }
-      if (!MAP.isEmpty()) {
         context.write(key, MAP);
-        MAP.clear();
-      }
-
   }
 }
 
