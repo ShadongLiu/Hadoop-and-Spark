@@ -164,37 +164,8 @@ public class PairsPMI  extends Configured implements Tool {
     //output of first mr job will be stored in this variable
     private static HashMap<String, Integer> word_count_output = new HashMap<String, Integer>();
 
-    // @Override
-    // public void setup(Context context) throws IOException, InterruptedException {
-    //   FileSystem fs = FileSystem.get(context.getConfiguration());
-    //   //array of output files for the first mapReduce job(not a single huge file)
-    //   FileStatus[] mr_outputs = fs.globStatus(new Path("tmp_for_paris/part-r-*"));
-    //
-    //
-    //   for (FileStatus file : mr_outputs) {
-    //     FSDataInputStream fsdis = fs.open(file.getPath());
-    //     InputStreamReader isr = new InputStreamReader(fsdis, "UTF-8");
-    //     BufferedReader br = new BufferedReader(isr);
-    //     String eachLine = br.readLine();
-    //
-    //     while (eachLine != null) {
-    //
-    //       String[] mr_data = eachLine.split("\\s+");
-    //       //store pairs like (A, sum) into a variable
-    //       word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
-    //       //read next line
-    //       eachLine = br.readLine();
-    //     }
-    //     br.close();
-    //   }
-    // }
-
     @Override
-    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
-        throws IOException, InterruptedException {
-      float sum = 0.0f;
-      Iterator<FloatWritable> iter = values.iterator();
-      int threshold = context.getConfiguration().getInt("threshold",0);
+    public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
       //array of output files for the first mapReduce job(not a single huge file)
       FileStatus[] mr_outputs = fs.globStatus(new Path("tmp_for_paris/part-r-*"));
@@ -216,6 +187,14 @@ public class PairsPMI  extends Configured implements Tool {
         }
         br.close();
       }
+    }
+
+    @Override
+    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
+        throws IOException, InterruptedException {
+      float sum = 0.0f;
+      Iterator<FloatWritable> iter = values.iterator();
+      int threshold = context.getConfiguration().getInt("threshold",0);
 
       while (iter.hasNext()) {
         sum += iter.next().get();
