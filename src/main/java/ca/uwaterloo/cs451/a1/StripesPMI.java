@@ -206,9 +206,7 @@ public class StripesPMI  extends Configured implements Tool {
         map.plus(iter.next());
       }
       //map now looks like {B:3, C:5} and key is A
-
-      Configuration conf = context.getConfiguration();
-      int threshold = conf.getInt("threshold",0);
+      int threshold = context.getConfiguration().getInt("threshold",0);
 
       String eachKey = key.toString();//A
       //number of occurence of the key i.e:A
@@ -238,7 +236,7 @@ public class StripesPMI  extends Configured implements Tool {
       if (!MAP.isEmpty()) {
         context.write(key, MAP);
         MAP.clear();
-      }    
+      }
   }
 }
 

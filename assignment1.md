@@ -14,8 +14,10 @@ Briefly describe in prose your solution, both the pairs and stripes implementati
 **Stripes implementation:** 2 MapReduce jobs 
 * Like the Pairs implementation, the input to the first job is the whole data set.   But the first mapper only reads the first 40 words for each line and ignore the   duplicates and at last emit a pair (word 1). Meanwhile, for each map function,   (a_line_counter 1) is also emitted to keep track of the number of lines it went through.  
 * Likewise, the first reducer is to sum up values in the pair emitted by the first   mapper and emit a pair (word sum) for each unique word. Also, the output of the    first MapReduce job is stored in an intermediate file (called tmp_for_stripes) which   will be used later.    
-* The second MapReduce job is something different. The input to the second job is still the whole data set, and the second mapper still reads the first 40 words for each line (ignore duplicates as well). But the output this time is like (word1 {(word2 1), })  
-* The second reducer sum up the values in the output emitted from the second mapper and at the same time, it will load the intermediate date stored in the disk before and capture the information which is needed. The(word sum) pair holds the times that each unique word occurred and the (a_line_counter sum) tells how many lines in total. These will help to calculate the PMI for each co-occurrence pair. So the final output looks like (word 1, word 2) (PMI, sum)  
+* The second MapReduce job is something different. The input to the second job is still the whole data set, and the second mapper still reads the first 40 words for each line (ignore duplicates as well). But the output this time is like (word1 {(word2  1), (word3  1}, ....)  
+* The combiner is to sum up the values of each co-occurrence word for the same key from what is emitted from the second mapper
+* The second reducer also sums up the values of each co-occurrence word for the same key word from what is emitted from the combiner and at the same time, it will load the intermediate data stored in the disk before and capture the information which is needed. The(word sum) pair holds the times that each unique word occurred and the (a_line_counter sum) tells how many lines in total. These will help to calculate the PMI for each co-occurrence pair. So, the final output looks like (word 1  {word 2=(PMI1,  sum1), word3=(PMI2,  sum2), ...})    
+
 
 
 

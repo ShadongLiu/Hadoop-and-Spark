@@ -194,9 +194,7 @@ public class PairsPMI  extends Configured implements Tool {
         throws IOException, InterruptedException {
       float sum = 0.0f;
       Iterator<FloatWritable> iter = values.iterator();
-
-      Configuration conf = context.getConfiguration();
-      int threshold = conf.getInt("threshold",10);
+      int threshold = context.getConfiguration().getInt("threshold",0);
 
       while (iter.hasNext()) {
         sum += iter.next().get();
