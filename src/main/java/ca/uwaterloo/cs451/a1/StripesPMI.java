@@ -55,7 +55,7 @@ import java.io.InputStreamReader;
 
 public class StripesPMI  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(StripesPMI.class);
-  private static final int WORD_LIMIT = 40;
+  private static final int WORD_TO_SEE = 40;
 
   //First mapper to emit (A, 1)
   public static final class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
@@ -66,33 +66,34 @@ public class StripesPMI  extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       List<String> tokens = Tokenizer.tokenize(value.toString());
+      //generate a set of unique words
       Set<String> wordOccur = new HashSet<>();
-      int numWords = 0;
+      int wordCount = 0;
       for (String word : tokens) {
-        numWords++;
+        wordCount++;
         if (!wordOccur.contains(word)) {
           wordOccur.add(word);
           WORD.set(word);
           context.write(WORD,ONE);
         }
-        if (numWords >= WORD_LIMIT) {
+        if (wordCount >= WORD_TO_SEE) {
           break;
         }
       }
       //to count the number of lines in the file
-      WORD.set("abcdef");
+      WORD.set("a_line_counter");
       context.write(WORD, ONE);
       }
     }
 
-  //first reducer to emit (word, sum)
+  //first reducer to emit (A, sum)
   public static final class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
       private static final IntWritable SUM = new IntWritable();
 
       @Override
       public void reduce(Text key, Iterable<IntWritable> values, Context context)
           throws IOException, InterruptedException {
-          // Sum up values.
+
         Iterator<IntWritable> iter = values.iterator();
         int sum = 0;
         while (iter.hasNext()) {
@@ -103,7 +104,7 @@ public class StripesPMI  extends Configured implements Tool {
       }
    }
 
- //second mapper to emit (word, {word1:1, word2:1, word3:1...})
+ //second mapper to emit (A, {B:1, C:1, D:1...})
  private static final class MyMapper2 extends Mapper<LongWritable, Text, Text, HMapStFW> {
    //remember HMapStFW is a string-float key-value pair
     private static final Text KEY = new Text();
@@ -112,16 +113,16 @@ public class StripesPMI  extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
-      //Map<String, HMapStFW> stripes = new HashMap<>();
+
       List<String> tokens = Tokenizer.tokenize(value.toString());
       ArrayList<String> wordOccur = new ArrayList<>();
-      int numWords = 0;
+      int wordCount = 0;
       for (String word : tokens) {
-        numWords++;
+        wordCount++;
         if (!wordOccur.contains(word)) {
           wordOccur.add(word);
         }
-        if (numWords >= WORD_LIMIT) {
+        if (wordCount >= WORD_TO_SEE) {
           break;
         }
       }
@@ -129,11 +130,14 @@ public class StripesPMI  extends Configured implements Tool {
         MAP.clear();
         KEY.set(wordOccur.get(i));
         for (int j = 0; j < wordOccur.size(); j++) {
+          //don't want A A
           if (i == j) {
             continue;
           }
+          //A {B 1}
           MAP.put(wordOccur.get(j), 1f);
         }
+        //TEXT {STRING-FLOAT pairs}
         context.write(KEY,MAP);
       }
     }
@@ -141,7 +145,8 @@ public class StripesPMI  extends Configured implements Tool {
 
 
 
-  //combiner is to sum the all the values(floats) in the map for the same key
+  //combiner is to sum all the values(floats) in the map for the same key
+  //i.e: A {B 15, C 21, D 11...}
   private static final class MyCombiner extends Reducer<Text, HMapStFW, Text, HMapStFW> {
     @Override
     public void reduce(Text key, Iterable<HMapStFW> values, Context context)
@@ -160,29 +165,36 @@ public class StripesPMI  extends Configured implements Tool {
   private static final class MyReducer2 extends Reducer<Text, HMapStFW, Text, HashMapWritable> {
     private static final Text KEY = new Text(); //(left part of the final output)
     private static final HashMapWritable MAP = new HashMapWritable(); //(right part of the final output)
+    //output of first mr job will be stored in this variable
+    private static final Map<String, Integer> word_count_output = new HashMap<String, Integer>();
 
-    private static final Map<String, Integer> wordCounts = new HashMap<String, Integer>();
-
+    //same as what I did in PairsPMI
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
-      FileStatus[] status = fs.globStatus(new Path("tmp2/part-r-*"));
-      for (FileStatus file : status) {
-        FSDataInputStream is = fs.open(file.getPath());
-        InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+      //array of output files for the first mapReduce job
+      FileStatus[] mr_outputs = fs.globStatus(new Path("tmp_for_stripes/part-r-*"));
+
+
+      for (FileStatus file : mr_outputs) {
+        FSDataInputStream fsdis = fs.open(file.getPath());
+        InputStreamReader isr = new InputStreamReader(fsdis, "UTF-8");
         BufferedReader br = new BufferedReader(isr);
-        String line = br.readLine();
-        while (line != null) {
-          String[] data = line.split("\\s+");
-          if (data.length == 2) {
-            wordCounts.put(data[0], Integer.parseInt(data[1]));
-          }
-          line = br.readLine();
+        String eachLine = br.readLine();
+
+        while (eachLine != null) {
+
+          String[] mr_data = eachLine.split("\\s+");
+          //store pairs like (A, sum) into a variable
+          word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
+          //read next line
+          eachLine = br.readLine();
         }
         br.close();
       }
     }
 
+    //emit A {B (pmi for AB, count for AB), ...}
     @Override
     public void reduce(Text key, Iterable<HMapStFW> values, Context context)
         throws IOException, InterruptedException {
@@ -199,22 +211,27 @@ public class StripesPMI  extends Configured implements Tool {
       int threshold = conf.getInt("threshold",0);
 
       String eachKey = key.toString();//A
-      //KEY.set(eachKey);//KEY is Text(A)
+      //number of occurence of the key i.e: A
+      Integer eachKeySum = word_count_output.get(eachKey);
+      Integer total = word_count_output.get("abcdef");
 
-      Integer eachKeySum = wordCounts.get(eachKey);
-      Integer total = wordCounts.get("abcdef");
       MAP.clear();
-      for (String term: map.keySet()) {
-        Integer termSum = wordCounts.get(term);
-        if (map.get(term) >= threshold) {
-          Text termWritable = new Text(term);
-          sum = map.get(term);
-          if (total != null && eachKeySum != null && termSum != null) {
-            float pmi = (float) Math.log10(1.0f * sum * total / (eachKeySum * termSum));
+      //co_occur is B C ... of the same key A
+      for (String co_occur: map.keySet()) {
+        //number of occurence of the co_occurence word (i.e:B)
+        Integer co_occurSum = word_count_output.get(co_occur);
+        if (map.get(co_occur) >= threshold) {
+          //convert the co_occur to writable type
+          Text co_occurWritable = new Text(co_occur);
+          //number of i.e:(A, B)
+          sum = map.get(co_occur);
+
+          if (total != null && eachKeySum != null && co_occurSum != null) {
+            float pmi = (float) Math.log10(1.0f * sum * total / (eachKeySum * co_occurSum));
             PairOfFloatInt pmi_count_pair = new PairOfFloatInt();
             pmi_count_pair.set(pmi, (int)sum);
-            MAP.put(termWritable, pmi_count_pair);
-            //MAP.put(new Text(term), pmi_count_pair);
+            MAP.put(co_occurWritable, pmi_count_pair);
+
           }
         }
       }
@@ -263,7 +280,7 @@ public class StripesPMI  extends Configured implements Tool {
     }
 
     //Job 1
-    String intermediatePath = "tmp2/";
+    String intermediatePath = "tmp_for_stripes/";
     LOG.info("Tool name: " + StripesPMI.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);

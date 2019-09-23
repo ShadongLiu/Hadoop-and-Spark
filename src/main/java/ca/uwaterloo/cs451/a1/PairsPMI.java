@@ -55,7 +55,7 @@ import java.io.InputStreamReader;
 
 public class PairsPMI  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(PairsPMI.class);
-  private static final int WORD_LIMIT = 40;
+  private static final int WORD_TO_SEE = 40;
 
   // First mapper to emit (A, 1)
   public static final class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
@@ -76,7 +76,7 @@ public class PairsPMI  extends Configured implements Tool {
           WORD.set(word);
           context.write(WORD,ONE);
         }
-        if (wordCount >= WORD_LIMIT) {
+        if (wordCount >= WORD_TO_SEE) {
           break;
         }
       }
@@ -120,7 +120,7 @@ public class PairsPMI  extends Configured implements Tool {
         if (!wordOccur.contains(word)) {
           wordOccur.add(word);
         }
-        if (wordCount >= WORD_LIMIT) {
+        if (wordCount >= WORD_TO_SEE) {
           break;
         }
       }
@@ -161,6 +161,7 @@ public class PairsPMI  extends Configured implements Tool {
   private static final class MyReducer2 extends
       Reducer<PairOfStrings, FloatWritable, PairOfStrings, PairOfFloatInt> {
     private static final PairOfFloatInt VALUE = new PairOfFloatInt();
+    //output of first mr job will be stored in this variable
     private static HashMap<String, Integer> word_count_output = new HashMap<String, Integer>();
 
     @Override
@@ -179,10 +180,8 @@ public class PairsPMI  extends Configured implements Tool {
         while (eachLine != null) {
 
           String[] mr_data = eachLine.split("\\s+");
-
           //store pairs like (A, sum) into a variable
           word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
-
           //read next line
           eachLine = br.readLine();
         }
@@ -206,7 +205,7 @@ public class PairsPMI  extends Configured implements Tool {
       if (sum >= threshold) {
         String x = key.getLeftElement();//A
         String y = key.getRightElement();//B
-        Integer total = word_count_output.get("a_line_counter");
+        Integer total = word_count_output.get("a_line_counter");//total number of lines
         Integer xVal = word_count_output.get(x);
         Integer yVal = word_count_output.get(y);
 
