@@ -44,13 +44,13 @@ import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 import tl.lin.data.pair.PairOfStrings;
 import tl.lin.data.pair.PairOfFloatInt;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+
 
 
 public class PairsPMI  extends Configured implements Tool {
@@ -167,7 +167,7 @@ public class PairsPMI  extends Configured implements Tool {
     @Override
     public void setup(Context context) throws IOException, InterruptedException {
       FileSystem fs = FileSystem.get(context.getConfiguration());
-      //array of output files for the first mapReduce job
+      //array of output files for the first mapReduce job(not a single huge file)
       FileStatus[] mr_outputs = fs.globStatus(new Path("tmp_for_paris/part-r-*"));
 
 
@@ -201,9 +201,9 @@ public class PairsPMI  extends Configured implements Tool {
       }
 
       if (sum >= threshold) {
+        Integer total = word_count_output.get("a_line_counter");//total number of lines
         String x = key.getLeftElement();//A
         String y = key.getRightElement();//B
-        Integer total = word_count_output.get("a_line_counter");//total number of lines
         Integer xVal = word_count_output.get(x);
         Integer yVal = word_count_output.get(y);
 
