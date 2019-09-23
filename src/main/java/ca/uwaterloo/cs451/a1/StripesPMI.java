@@ -46,12 +46,12 @@ import tl.lin.data.pair.PairOfStrings;
 import tl.lin.data.pair.PairOfFloatInt;
 import tl.lin.data.map.HMapStFW;
 import tl.lin.data.map.HashMapWritable;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+
 
 public class StripesPMI  extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(StripesPMI.class);
@@ -213,9 +213,9 @@ public class StripesPMI  extends Configured implements Tool {
       String eachKey = key.toString();//A
       //number of occurence of the key i.e:A
       Integer eachKeySum = word_count_output.get(eachKey);
-      Integer total = word_count_output.get("abcdef");
+      Integer total = word_count_output.get("a_line_counter");
 
-      MAP.clear();
+
       //co_occur is B C ... of the same key A
       for (String co_occur: map.keySet()) {
         //number of occurence of the co_occurence word (i.e:B)
@@ -235,9 +235,10 @@ public class StripesPMI  extends Configured implements Tool {
           }
         }
       }
-      if (MAP.size() > 0) {
+      if (!MAP.isEmpty()) {
         context.write(key, MAP);
-      }
+        MAP.clear();
+      }    
   }
 }
 
@@ -289,7 +290,7 @@ public class StripesPMI  extends Configured implements Tool {
     LOG.info(" - threshold: " + args.threshold);
 
     Configuration conf = getConf();
-    conf.set("threshold", Integer.toString(args.threshold));
+    conf.setInt("threshold", args.threshold);
     conf.set("intermediatePath", intermediatePath);
 
     Job job = Job.getInstance(getConf());
