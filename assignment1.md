@@ -22,11 +22,19 @@ Briefly describe in prose your solution, both the pairs and stripes implementati
 
 
 ## Question 2
-
-
+Ran on linux.student.cs.uwaterloo.ca
+The running time for the complete Pairs implementation is  
+Job1 : 3.889    
+Job2 : 25.363   
+total : 3.889 + 25.363 = 29.252 sec
+The running time for the complete Stripes implementation is   
+Job1 : 4.025    
+Job2 : 11.525   
+total : 4.025 + 11.525 = 15.550 sec
 
 
 ## Question 3
+Ran on linux.student.cs.uwaterloo.ca  
 
 
 

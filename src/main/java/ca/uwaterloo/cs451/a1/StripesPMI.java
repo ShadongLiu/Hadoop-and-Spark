@@ -147,20 +147,20 @@ public class StripesPMI  extends Configured implements Tool {
 
   //combiner is to sum all the values(floats) in the map for the same key
   //i.e: A {B 15, C 21, D 11...}
-  private static final class MyCombiner extends Reducer<Text, HMapStFW, Text, HMapStFW> {
-    @Override
-    public void reduce(Text key, Iterable<HMapStFW> values, Context context)
-        throws IOException, InterruptedException {
-      Iterator<HMapStFW> iter = values.iterator();
-      HMapStFW map = new HMapStFW();
-
-      while (iter.hasNext()) {
-        map.plus(iter.next());
-      }
-
-      context.write(key, map);
-    }
-  }
+  // private static final class MyCombiner extends Reducer<Text, HMapStFW, Text, HMapStFW> {
+  //   @Override
+  //   public void reduce(Text key, Iterable<HMapStFW> values, Context context)
+  //       throws IOException, InterruptedException {
+  //     Iterator<HMapStFW> iter = values.iterator();
+  //     HMapStFW map = new HMapStFW();
+  //
+  //     while (iter.hasNext()) {
+  //       map.plus(iter.next());
+  //     }
+  //
+  //     context.write(key, map);
+  //   }
+  // }
 
   private static final class MyReducer2 extends Reducer<Text, HMapStFW, Text, HashMapWritable> {
     private static final Text KEY = new Text(); //(left part of the final output)

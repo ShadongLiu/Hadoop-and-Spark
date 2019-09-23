@@ -140,22 +140,22 @@ public class PairsPMI  extends Configured implements Tool {
 
 
   //first combiner to emit (A, B) sum of this pair
-  private static final class MyCombiner extends
-      Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
-    private static final FloatWritable SUM = new FloatWritable();
-
-    @Override
-    public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
-        throws IOException, InterruptedException {
-      float sum = 0.0f;
-      Iterator<FloatWritable> iter = values.iterator();
-      while (iter.hasNext()) {
-        sum += iter.next().get();
-      }
-      SUM.set(sum);
-      context.write(key, SUM);
-    }
-  }
+  // private static final class MyCombiner extends
+  //     Reducer<PairOfStrings, FloatWritable, PairOfStrings, FloatWritable> {
+  //   private static final FloatWritable SUM = new FloatWritable();
+  //
+  //   @Override
+  //   public void reduce(PairOfStrings key, Iterable<FloatWritable> values, Context context)
+  //       throws IOException, InterruptedException {
+  //     float sum = 0.0f;
+  //     Iterator<FloatWritable> iter = values.iterator();
+  //     while (iter.hasNext()) {
+  //       sum += iter.next().get();
+  //     }
+  //     SUM.set(sum);
+  //     context.write(key, SUM);
+  //   }
+  // }
 
 
   private static final class MyReducer2 extends
