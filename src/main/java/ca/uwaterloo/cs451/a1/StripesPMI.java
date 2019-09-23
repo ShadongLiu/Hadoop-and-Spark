@@ -353,7 +353,7 @@ public class StripesPMI  extends Configured implements Tool {
     }
 
     jobTwo.setMapperClass(MyMapper2.class);
-    jobTwo.setCombinerClass(MyCombiner.class);
+    //jobTwo.setCombinerClass(MyCombiner.class);
     jobTwo.setReducerClass(MyReducer2.class);
 
     job.getConfiguration().setInt("mapred.max.split.size", 1024 * 1024 * 32);

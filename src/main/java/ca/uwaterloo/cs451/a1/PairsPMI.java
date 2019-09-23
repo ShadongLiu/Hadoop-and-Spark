@@ -339,7 +339,7 @@ public class PairsPMI  extends Configured implements Tool {
     }
 
     jobTwo.setMapperClass(MyMapper2.class);
-    jobTwo.setCombinerClass(MyCombiner.class);
+    //jobTwo.setCombinerClass(MyCombiner.class);
     jobTwo.setReducerClass(MyReducer2.class);
     jobTwo.setPartitionerClass(MyPartitioner.class);
 
