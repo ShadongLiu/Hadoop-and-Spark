@@ -183,8 +183,6 @@ public class PairsPMI  extends Configured implements Tool {
           String[] mr_data = eachLine.split("\\s+");
           //store pairs like (A, sum) into a variable
           word_count_output.put(mr_data[0], Integer.parseInt(mr_data[1]));
-          //read next line
-          //eachLine = br.readLine();
         }
         LOG.info("Finish reading file.");
         br.close();
