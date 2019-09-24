@@ -180,10 +180,10 @@ public class StripesPMI  extends Configured implements Tool {
         FSDataInputStream fsdis = fs.open(file.getPath());
         InputStreamReader isr = new InputStreamReader(fsdis, "UTF-8");
         BufferedReader br = new BufferedReader(isr);
-        String eachLine = br.readLine();
+        String eachLine = null;
 
         LOG.info("Start reading file.");
-        while (eachLine != null) {
+        while ((eachLine = br.readLine()) != null) {
 
           String[] mr_data = eachLine.split("\\s+");
           //store pairs like (A, sum) into a variable
