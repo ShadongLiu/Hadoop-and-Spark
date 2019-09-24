@@ -182,6 +182,7 @@ public class StripesPMI  extends Configured implements Tool {
         BufferedReader br = new BufferedReader(isr);
         String eachLine = br.readLine();
 
+        LOG.info("Start reading file.");
         while (eachLine != null) {
 
           String[] mr_data = eachLine.split("\\s+");
@@ -190,6 +191,7 @@ public class StripesPMI  extends Configured implements Tool {
           //read next line
           eachLine = br.readLine();
         }
+        LOG.info("Finish reading file.");
         br.close();
       }
     }
@@ -225,9 +227,11 @@ public class StripesPMI  extends Configured implements Tool {
           //number of i.e:(A, B)
           sum = map.get(co_occur);
 
+          PairOfFloatInt pmi_count_pair = new PairOfFloatInt();
+
           if (total != null && eachKeySum != null && co_occurSum != null) {
             float pmi = (float) Math.log10(1.0f * sum * total / (eachKeySum * co_occurSum));
-            PairOfFloatInt pmi_count_pair = new PairOfFloatInt();
+
             pmi_count_pair.set(pmi, (int)sum);
             MAP.put(co_occurWritable, pmi_count_pair);
 
