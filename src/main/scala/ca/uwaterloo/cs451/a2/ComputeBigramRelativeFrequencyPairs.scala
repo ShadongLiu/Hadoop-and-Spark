@@ -25,7 +25,7 @@ import org.apache.spark.SparkConf
 import org.rogach.scallop._
 import org.apache.spark.Partitioner
 
-class Conf(args: Seq[String]) extends ScallopConf(args) {
+class PairsConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, reducers)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
@@ -45,7 +45,7 @@ object ComputeBigramRelativeFrequecyPairs extends Tokenizer {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
-    val args = new Conf(argv)
+    val args = new PairsConf(argv)
 
     log.info("Input: " + args.input())
     log.info("Output: " + args.output())
