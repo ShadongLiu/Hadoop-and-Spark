@@ -34,10 +34,10 @@ class PairsConf(args: Seq[String]) extends ScallopConf(args) {
 }
 
 class MyPartitioner(partitions: Int) extends Partitioner {
-  def numPartitions: Int = numPar
+  def numPartitions: Int = partitions
   def getPartition(key: Any): Int = key match {
     case null => 0
-    case(k1, k2) => (k1.hashCode & Integer.MAX_VALUE) % numPar
+    case(k1, k2) => (k1.hashCode & Integer.MAX_VALUE) % partitions
   }
 }
 
@@ -58,20 +58,21 @@ object ComputeBigramRelativeFrequecyPairs extends Tokenizer {
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
     val textFile = sc.textFile(args.input())
+    var marginal = 0.0
     val counts = textFile
       .flatMap(line => {
         val tokens = tokenize(line)
         if (tokens.length > 1) {
           val pairs = tokens.sliding(2).map(p => (p.head.mkString, p.tail.mkString)).toList
-          val marginal = tokens.init.map(p => (p, "*"))
+          val wordmarginal = tokens.init.map(p => (p, "*"))
           //concatenation of list of pairs and list of marginal values
-          pairs ++ marginal
+          pairs ++ wordmarginal
         }else List()
       })
       .map(bigram => (bigram, 1.0f))
       //(x,y) => x + y
       .reduceByKey(_ + _)
-      .sortByKey().partitionBy(new MyPartitioner(args.reducer()))
+      .sortByKey().partitionBy(new MyPartitioner(args.reducers()))
       .map(bigram => bigram._1 match{
         case (_,"*") => {
           marginal = bigram._2
