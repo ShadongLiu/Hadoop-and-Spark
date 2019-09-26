@@ -58,7 +58,7 @@ object ComputeBigramRelativeFrequecyPairs extends Tokenizer {
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
     val textFile = sc.textFile(args.input())
-    var marginal = 0.0
+    //var marginal = 0.0
     val counts = textFile
       .flatMap(line => {
         val tokens = tokenize(line)
