@@ -14,7 +14,7 @@
   * limitations under the License.
   */
 
-package io.bespin.scala.spark.bigram
+package ca.uwaterloo.cs451.a2
 
 import io.bespin.scala.util.Tokenizer
 
