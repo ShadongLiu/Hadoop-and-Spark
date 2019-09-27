@@ -24,7 +24,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
 
-class PairsConf(args: Seq[String]) extends ScallopConf(args) {
+class newConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, reducers)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
@@ -32,17 +32,17 @@ class PairsConf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
-object BigramCount extends Tokenizer {
+object BigramCountTwo extends Tokenizer {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
-    val args = new PairsConf(argv)
+    val args = new newConf(argv)
 
     log.info("Input: " + args.input())
     log.info("Output: " + args.output())
     log.info("Number of reducers: " + args.reducers())
 
-    val conf = new SparkConf().setAppName("Bigram Count")
+    val conf = new SparkConf().setAppName("Bigram Count Two")
     val sc = new SparkContext(conf)
 
     val outputDir = new Path(args.output())
