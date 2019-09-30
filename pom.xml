@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -10,7 +9,7 @@
   <name>assignments</name>
   <version>1.0</version>
   <description>Assignments for CS 451 Data-Intensive Distributed Computing (Fall 2019) at the University of Waterloo</description>
-  <url>https://roegiest.com/bigdata-2019w/</url>
+  <url>https://www.student.cs.uwaterloo.ca/~cs451/</url>
 
   <repositories>
     <repository>
