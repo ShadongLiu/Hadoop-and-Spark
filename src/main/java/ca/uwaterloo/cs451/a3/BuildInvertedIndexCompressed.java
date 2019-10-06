@@ -44,6 +44,8 @@ import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io DataOutputStream;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -51,8 +53,8 @@ import java.util.List;
 public class BuildInvertedIndexCompressed extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
 
-  private static final class MyMapper extends Mapper<LongWritable, Text, Text, PairOfInts> {
-    private static final Text WORD = new Text();
+  private static final class MyMapper extends Mapper<LongWritable, Text, PairOfStringInt, IntWritable> {
+    private static final IntWritable ONE = new IntWritable();
     private static final Object2IntFrequencyDistribution<String> COUNTS =
         new Object2IntFrequencyDistributionEntry<>();
 
@@ -67,17 +69,25 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         COUNTS.increment(token);
       }
 
-      // Emit postings.
       for (PairOfObjectInt<String> e : COUNTS) {
-        WORD.set(e.getLeftElement());
-        context.write(WORD, new PairOfInts((int) docno.get(), e.getRightElement()));
+        TF.set(e.getRightElement());
+        //emit(one, 1) 1  (fish, 1) 2... for each doc
+        context.write(new PairOfStringInt(e.getLeftElement(), (int)docno.get()),TF);
       }
     }
   }
 
   private static final class MyReducer extends
-      Reducer<Text, PairOfInts, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
-    private static final IntWritable DF = new IntWritable();
+      Reducer<PairOfStraingInt, IntWritable, Text, BytesWritable> {
+    //private static final IntWritable DF = new IntWritable();
+    private static final Text TERM = new Text();
+    private final static ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    private final static DataOutputStream dataStream = new DataOutputStream(byteStream);
+
+    String prevWord = "";
+    int lastSeen = 0;
+    int df = 0;
+
 
     @Override
     public void reduce(Text key, Iterable<PairOfInts> values, Context context)
@@ -85,19 +95,62 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
       Iterator<PairOfInts> iter = values.iterator();
       ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
 
-      int df = 0;
-      while (iter.hasNext()) {
-        postings.add(iter.next().clone());
-        df++;
+      if (!key.getLeftElement().equals(prevWord) && prevWord != null) {
+        dataStream.flush();
+        byteStream.flush();
+
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        DataOutputStream dataBuffer = new DataOutputStream(byteBuffer);
+
+        WritableUtils.writeVInt(dataBuffer, df);
+        dataBuffer.write(byteStream.toByteArray());
+
+        TERM.set(prevWord);
+        context.write(TERM, new BytesWritable(byteBuffer.toByteArray()));
+
+        byteStream.reset();
+        lastSeen = 0;
+        df = 0;
       }
 
-      // Sort the postings by docno ascending.
-      Collections.sort(postings);
 
-      DF.set(df);
-      context.write(key, new PairOfWritables<>(DF, postings));
+      while (iter.hasNext()) {
+        df++;
+        //postings.add(iter.next().clone());
+        int tf = iter.next().get();
+        WritableUtils.writeVInt(dataStream, (key.getRightElement() - lastSeen));
+        WritableUtils.writeVInt(dataStream, tf);
+        lastSeen = key.getRightElement();
+      }
+      prevWord = key.getRightElement();
     }
+
+
+  @Override
+  public void cleanup(Context context) throws IOException, InterruptedException {
+    dataStream.flush();
+    byteStream.flush();
+
+    ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+    DataOutputStream dataBuffer = new DataOutputStream(byteBuffer);
+
+    WritableUtils.writeVInt(dataBuffer, df);
+    dataBuffer.write(byteStream.toByteArray());
+
+    TERM.set(prevWord);
+    context.write(TERM, new BytesWritable(byteBuffer.toByteArray()));
+
+    byteStream.close();
+    dataStream.close();
   }
+}
+
+private static final class MyPartitioner extends Partitioner<PairOfStringInt, IntWritable> {
+  @Override
+  public int getPartition(PairOfStringInt key, IntWritable value, int numReduceTasks) {
+    return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
+  }
+}
 
   private BuildInvertedIndexCompressed() {}
 
@@ -128,23 +181,25 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     LOG.info("Tool: " + BuildInvertedIndexCompressed.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
+    LOG.info(" - num reducers: " + args.reducers);
 
     Job job = Job.getInstance(getConf());
     job.setJobName(BuildInvertedIndexCompressed.class.getSimpleName());
     job.setJarByClass(BuildInvertedIndexCompressed.class);
 
-    job.setNumReduceTasks(1);
+    job.setNumReduceTasks(args.reducers);
 
     FileInputFormat.setInputPaths(job, new Path(args.input));
     FileOutputFormat.setOutputPath(job, new Path(args.output));
 
-    job.setMapOutputKeyClass(Text.class);
-    job.setMapOutputValueClass(PairOfInts.class);
+    job.setMapOutputKeyClass(PairOfStringInt.class);
+    job.setMapOutputValueClass(IntWritable.class);
     job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(PairOfWritables.class);
+    job.setOutputValueClass(BytesWritable.class);
     job.setOutputFormatClass(MapFileOutputFormat.class);
 
     job.setMapperClass(MyMapper.class);
+    job.setPartitionerClass(MyPartitioner.class)
     job.setReducerClass(MyReducer.class);
 
     // Delete the output directory if it exists already.
