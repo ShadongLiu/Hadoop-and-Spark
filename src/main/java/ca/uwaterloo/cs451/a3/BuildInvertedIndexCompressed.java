@@ -23,8 +23,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -40,6 +43,7 @@ import tl.lin.data.array.ArrayListWritable;
 import tl.lin.data.fd.Object2IntFrequencyDistribution;
 import tl.lin.data.fd.Object2IntFrequencyDistributionEntry;
 import tl.lin.data.pair.PairOfInts;
+import tl.lin.data.pair.PairOfStringInt;
 import tl.lin.data.pair.PairOfObjectInt;
 import tl.lin.data.pair.PairOfWritables;
 
@@ -54,7 +58,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(BuildInvertedIndexCompressed.class);
 
   private static final class MyMapper extends Mapper<LongWritable, Text, PairOfStringInt, IntWritable> {
-    private static final IntWritable ONE = new IntWritable();
+    private static final IntWritable TF = new IntWritable();
     private static final Object2IntFrequencyDistribution<String> COUNTS =
         new Object2IntFrequencyDistributionEntry<>();
 
@@ -78,7 +82,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   }
 
   private static final class MyReducer extends
-      Reducer<PairOfStraingInt, IntWritable, Text, BytesWritable> {
+      Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
     //private static final IntWritable DF = new IntWritable();
     private static final Text TERM = new Text();
     private final static ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
@@ -160,6 +164,9 @@ private static final class MyPartitioner extends Partitioner<PairOfStringInt, In
 
     @Option(name = "-output", metaVar = "[path]", required = true, usage = "output path")
     String output;
+
+    @Option(name = "-reducers", metaVar = "[num]", usage = "number of reducers")
+    int numReducers = 1;
   }
 
   /**
