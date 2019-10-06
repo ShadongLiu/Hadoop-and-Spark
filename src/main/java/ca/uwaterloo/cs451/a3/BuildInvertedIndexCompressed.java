@@ -199,7 +199,7 @@ private static final class MyPartitioner extends Partitioner<PairOfStringInt, In
     job.setOutputFormatClass(MapFileOutputFormat.class);
 
     job.setMapperClass(MyMapper.class);
-    job.setPartitionerClass(MyPartitioner.class)
+    job.setPartitionerClass(MyPartitioner.class);
     job.setReducerClass(MyReducer.class);
 
     // Delete the output directory if it exists already.
