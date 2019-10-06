@@ -41,12 +41,12 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 
-public class BooleanRetrieval extends Configured implements Tool {
+public class BooleanRetrievalCompressed extends Configured implements Tool {
   private MapFile.Reader index;
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
 
-  private BooleanRetrieval() {}
+  private BooleanRetrievalCompressed() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
     index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
@@ -191,6 +191,6 @@ public class BooleanRetrieval extends Configured implements Tool {
    * @throws Exception if tool encounters an exception
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new BooleanRetrieval(), args);
+    ToolRunner.run(new BooleanRetrievalCompressed(), args);
   }
 }
