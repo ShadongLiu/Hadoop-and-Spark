@@ -45,7 +45,7 @@ import tl.lin.data.pair.PairOfWritables;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
-import java.io DataOutputStream;
+import java.io.DataOutputStream;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
