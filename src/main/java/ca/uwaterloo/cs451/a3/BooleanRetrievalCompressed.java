@@ -19,11 +19,14 @@ package ca.uwaterloo.cs451.a3;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.kohsuke.args4j.CmdLineException;
@@ -35,6 +38,8 @@ import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Set;
@@ -45,11 +50,22 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
   private MapFile.Reader index;
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
+  private int numReducers;
 
   private BooleanRetrievalCompressed() {}
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-    index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
+    FileStatus[] files = fs.listStatus(new Path(indexPath));
+    numReducers = files.length - 1;
+    index = new MapFile.Reader[numReducers];
+
+    int i = 0;
+    for (FileStatus file : files) {
+      if (file.getPath().toString().contains("part-r-")) {
+        index[i] = new MapFile.Reader(file.getPath().toString(), fs.getConf());
+        i++;
+      }
+    }
     collection = fs.open(new Path(collectionPath));
     stack = new Stack<>();
   }
@@ -123,13 +139,31 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
   private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
     Text key = new Text();
-    PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-        new PairOfWritables<>();
-
+    BytesWritable value = new BytesWritable();
     key.set(term);
-    index.get(key, value);
+    int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
+    index[partition].get(key.value);
 
-    return value.getRightElement();
+    return endcodePostings();
+  }
+
+  private ArrayListWritable<PairOfInts> endcodePostings(BytesWritable value) throws IOException {
+    ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
+    byte[] valBytes = value.getBytes();
+
+    ByteArrayOutputStream byteStream = new ByteArrayOutputStream(valBytes);
+    DataOutputStream dataStream = new DataOutputStream(byteStream);
+
+    int doc_no = 0;
+    int df = WritableUtils.readVInt(dataStream);
+
+    for (int i = 0; i < df; i++) {
+      int gap = WritableUtils.readVInt(dataStream);
+      int tf = WritableUtils.readVInt(dataStream);
+      doc_no += gap;
+      postings.add(new PairOfInts(doc_no, tf));
+    }
+    return postings;
   }
 
   public String fetchLine(long offset) throws IOException {
