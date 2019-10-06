@@ -47,7 +47,7 @@ import java.util.Stack;
 import java.util.TreeSet;
 
 public class BooleanRetrievalCompressed extends Configured implements Tool {
-  private MapFile.Reader index;
+  private MapFile.Reader[] index;
   private FSDataInputStream collection;
   private Stack<Set<Integer>> stack;
   private int numReducers;
@@ -142,17 +142,17 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     BytesWritable value = new BytesWritable();
     key.set(term);
     int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
-    index[partition].get(key.value);
+    index[partition].get(key, value);
 
-    return endcodePostings();
+    return endcodePostings(value);
   }
 
   private ArrayListWritable<PairOfInts> endcodePostings(BytesWritable value) throws IOException {
     ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
     byte[] valBytes = value.getBytes();
 
-    ByteArrayOutputStream byteStream = new ByteArrayOutputStream(valBytes);
-    DataOutputStream dataStream = new DataOutputStream(byteStream);
+    ByteArrayInputStream byteStream = new ByteArrayInputStream(valBytes);
+    DataInputStream dataStream = new DataInputStream(byteStream);
 
     int doc_no = 0;
     int df = WritableUtils.readVInt(dataStream);
