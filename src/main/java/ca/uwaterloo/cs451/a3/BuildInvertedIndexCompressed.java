@@ -96,7 +96,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     @Override
     public void reduce(PairOfStringInt key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
-      Iterator<PairOfInts> iter = values.iterator();
+      Iterator<IntWritable> iter = values.iterator();
       ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
 
       if (!key.getLeftElement().equals(prevWord) && prevWord != null) {
@@ -126,7 +126,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         WritableUtils.writeVInt(dataStream, tf);
         lastSeen = key.getRightElement();
       }
-      prevWord = key.getRightElement();
+      prevWord = key.getLeftElement();
     }
 
 
@@ -188,13 +188,13 @@ private static final class MyPartitioner extends Partitioner<PairOfStringInt, In
     LOG.info("Tool: " + BuildInvertedIndexCompressed.class.getSimpleName());
     LOG.info(" - input path: " + args.input);
     LOG.info(" - output path: " + args.output);
-    LOG.info(" - num reducers: " + args.reducers);
+    LOG.info(" - num reducers: " + args.numReducers);
 
     Job job = Job.getInstance(getConf());
     job.setJobName(BuildInvertedIndexCompressed.class.getSimpleName());
     job.setJarByClass(BuildInvertedIndexCompressed.class);
 
-    job.setNumReduceTasks(args.reducers);
+    job.setNumReduceTasks(args.numReducers);
 
     FileInputFormat.setInputPaths(job, new Path(args.input));
     FileOutputFormat.setOutputPath(job, new Path(args.output));
