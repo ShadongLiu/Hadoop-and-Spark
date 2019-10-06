@@ -94,7 +94,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 
     @Override
-    public void reduce(Text key, Iterable<PairOfInts> values, Context context)
+    public void reduce(PairOfStringInt key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
       Iterator<PairOfInts> iter = values.iterator();
       ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
