@@ -38,8 +38,8 @@ import tl.lin.data.pair.PairOfInts;
 import tl.lin.data.pair.PairOfWritables;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Set;
@@ -62,7 +62,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     int i = 0;
     for (FileStatus file : files) {
       if (file.getPath().toString().contains("part-r-")) {
-        index[i] = new MapFile.Reader(file.getPath().toString(), fs.getConf());
+        index[i] = new MapFile.Reader(file.getPath(), fs.getConf());
         i++;
       }
     }
