@@ -160,9 +160,10 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
     for (int i = 0; i < df; i++) {
       //df represents how many (gap tf) pairs are in the posting list
-      //read gap then read tf
+      //read compressed gap and read compressed tf
       int gap = WritableUtils.readVInt(allDataInput);
       int tf = WritableUtils.readVInt(allDataInput);
+      if (docno == 0 || tf ==0) break;
       docno += gap;
       postings.add(new PairOfInts(docno, tf));
     }
