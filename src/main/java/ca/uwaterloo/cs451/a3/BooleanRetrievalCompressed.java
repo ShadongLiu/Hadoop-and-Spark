@@ -56,16 +56,16 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
     FileStatus[] files = fs.listStatus(new Path(indexPath));
+    numReducers = files.length - 1;
     index = new MapFile.Reader[numReducers];
 
-    int cnt = 0;
+    int i = 0;
     for (FileStatus file : files) {
       if (file.getPath().toString().contains("part-r-")) {
-        index[cnt] = new MapFile.Reader(file.getPath(), fs.getConf());
-        cnt++;
+        index[i] = new MapFile.Reader(file.getPath(), fs.getConf());
+        i++;
       }
     }
-    numReducers = cnt;
     collection = fs.open(new Path(collectionPath));
     stack = new Stack<>();
   }
@@ -163,7 +163,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
       //read compressed gap and read compressed tf
       int gap = WritableUtils.readVInt(allDataInput);
       int tf = WritableUtils.readVInt(allDataInput);
-
+      
       docno += gap;
       postings.add(new PairOfInts(docno, tf));
     }
