@@ -56,16 +56,16 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
     FileStatus[] files = fs.listStatus(new Path(indexPath));
+    numReducers = files.length - 1;
     index = new MapFile.Reader[numReducers];
 
-    int cnt = 0;
+    int i = 0;
     for (FileStatus file : files) {
       if (file.getPath().toString().contains("part-r-")) {
-        index[cnt] = new MapFile.Reader(file.getPath(), fs.getConf());
-        cnt++;
+        index[i] = new MapFile.Reader(file.getPath(), fs.getConf());
+        i++;
       }
     }
-    numReducers = cnt;
     collection = fs.open(new Path(collectionPath));
     stack = new Stack<>();
   }
@@ -141,7 +141,6 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     Text key = new Text();
     BytesWritable value = new BytesWritable();
     key.set(term);
-    //find the partition the term is in
     int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
     //get the bytes for postings (including df)
     index[partition].get(key, value);
@@ -156,23 +155,17 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     DataInputStream allDataInput = new DataInputStream(allByteInput);
 
     int docno = 0;
-    int gap = 0;
-    int tf = 0;
     //we wrote the df last so we read it first
     int df = WritableUtils.readVInt(allDataInput);
 
     for (int i = 0; i < df; i++) {
       //df represents how many (gap tf) pairs are in the posting list
-      //read compressed gap then read compressed tf
-      gap = WritableUtils.readVInt(allDataInput);
-      tf = WritableUtils.readVInt(allDataInput);
-      if(gap == 0 || tf == 0) break;
+      //read gap then read tf
+      int gap = WritableUtils.readVInt(allDataInput);
+      int tf = WritableUtils.readVInt(allDataInput);
       docno += gap;
       postings.add(new PairOfInts(docno, tf));
     }
-    allByteInput.close();
-    allDataInput.close();
-
     return postings;
   }
 
