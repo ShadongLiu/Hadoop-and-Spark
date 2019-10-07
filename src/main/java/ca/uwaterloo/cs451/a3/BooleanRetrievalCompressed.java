@@ -144,10 +144,10 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
     index[partition].get(key, value);
 
-    return endcodePostings(value);
+    return decodePostings(value);
   }
 
-  private ArrayListWritable<PairOfInts> endcodePostings(BytesWritable value) throws IOException {
+  private ArrayListWritable<PairOfInts> decodePostings(BytesWritable value) throws IOException {
     ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
     byte[] valBytes = value.getBytes();
 

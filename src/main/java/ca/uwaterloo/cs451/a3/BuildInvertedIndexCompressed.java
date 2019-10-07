@@ -67,15 +67,15 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         throws IOException, InterruptedException {
       List<String> tokens = Tokenizer.tokenize(doc.toString());
 
-      // Build a histogram of the terms.
       COUNTS.clear();
       for (String token : tokens) {
         COUNTS.increment(token);
       }
 
       for (PairOfObjectInt<String> e : COUNTS) {
+        //TF represents the time each term appear in the current doc
         TF.set(e.getRightElement());
-        //emit(one, 1) 1  (fish, 1) 2... for each doc
+        //emit(one, 1) 1  (fish, 1) 2... for each doc the 1 inside represents the docno
         context.write(new PairOfStringInt(e.getLeftElement(), (int)docno.get()),TF);
       }
     }
@@ -84,36 +84,40 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   private static final class MyReducer extends
       Reducer<PairOfStringInt, IntWritable, Text, BytesWritable> {
     //private static final IntWritable DF = new IntWritable();
-    private static final Text TERM = new Text();
-    private final static ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-    private final static DataOutputStream dataStream = new DataOutputStream(byteStream);
-
-    String prevWord = "";
-    int lastSeen = 0;
     int df = 0;
+    int prevDoc = 0;
+    String prevWord = "";
+    private static final Text TERM = new Text();
+    private final static ByteArrayOutputStream postingByte = new ByteArrayOutputStream();
+    private final static DataOutputStream postingData = new DataOutputStream(postingByte);
 
 
     @Override
     public void reduce(PairOfStringInt key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
       Iterator<IntWritable> iter = values.iterator();
-      ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
+      //ArrayListWritable<PairOfInts> postings = new ArrayListWritable<>();
 
-      if (!key.getLeftElement().equals(prevWord) && prevWord != null) {
-        dataStream.flush();
-        byteStream.flush();
-
-        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-        DataOutputStream dataBuffer = new DataOutputStream(byteBuffer);
-
-        WritableUtils.writeVInt(dataBuffer, df);
-        dataBuffer.write(byteStream.toByteArray());
-
+      if (prevWord != null && !key.getLeftElement().equals(prevWord)) {
+        //flush and write out the postings to the disk
+        postingData.flush();
+        postingByte.flush();
+        
         TERM.set(prevWord);
-        context.write(TERM, new BytesWritable(byteBuffer.toByteArray()));
+        //create the buffer we need for the final postings (including the df)
+        ByteArrayOutputStream allByteBuffer = new ByteArrayOutputStream();
+        DataOutputStream allDataBuffer = new DataOutputStream(allByteBuffer);
 
-        byteStream.reset();
-        lastSeen = 0;
+        //write df first since we want df comes first
+        WritableUtils.writeVInt(allDataBuffer, df);
+        //write postings bytes behind df byte
+        allDataBuffer.write(postingByte.toByteArray());
+
+        context.write(TERM, new BytesWritable(allByteBuffer.toByteArray()));
+        // prepare for next different word
+        postingByte.reset();
+        allByteBuffer.reset();
+        prevDoc = 0;
         df = 0;
       }
 
@@ -122,30 +126,34 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         df++;
         //postings.add(iter.next().clone());
         int tf = iter.next().get();
-        WritableUtils.writeVInt(dataStream, (key.getRightElement() - lastSeen));
-        WritableUtils.writeVInt(dataStream, tf);
-        lastSeen = key.getRightElement();
+        int gap = key.getRightElement() - prevDoc;
+        prevDoc = key.getRightElement();
+        //Here we use gap compression(only encode gaps)
+        //We write gaps first since postings look like (docno(+gap), tf)
+        WritableUtils.writeVInt(postingData, gap);
+        WritableUtils.writeVInt(postingData, tf);
       }
+      //finished the postings for one word (no df included)
       prevWord = key.getLeftElement();
     }
 
 
   @Override
   public void cleanup(Context context) throws IOException, InterruptedException {
-    dataStream.flush();
-    byteStream.flush();
+    postingData.flush();
+    postingByte.flush();
 
-    ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-    DataOutputStream dataBuffer = new DataOutputStream(byteBuffer);
+    ByteArrayOutputStream allByteBuffer = new ByteArrayOutputStream();
+    DataOutputStream allDataBuffer = new DataOutputStream(allByteBuffer);
 
-    WritableUtils.writeVInt(dataBuffer, df);
-    dataBuffer.write(byteStream.toByteArray());
+    WritableUtils.writeVInt(allDataBuffer, df);
+    allDataBuffer.write(postingByte.toByteArray());
 
     TERM.set(prevWord);
-    context.write(TERM, new BytesWritable(byteBuffer.toByteArray()));
+    context.write(TERM, new BytesWritable(allByteBuffer.toByteArray()));
 
-    byteStream.close();
-    dataStream.close();
+    postingByte.close();
+    postingData.close();
   }
 }
 
