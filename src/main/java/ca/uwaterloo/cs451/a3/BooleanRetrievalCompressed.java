@@ -56,16 +56,16 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
 
   private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
     FileStatus[] files = fs.listStatus(new Path(indexPath));
-    numReducers = files.length - 1;
     index = new MapFile.Reader[numReducers];
 
-    int i = 0;
+    int cnt = 0;
     for (FileStatus file : files) {
       if (file.getPath().toString().contains("part-r-")) {
-        index[i] = new MapFile.Reader(file.getPath(), fs.getConf());
-        i++;
+        index[cnt] = new MapFile.Reader(file.getPath(), fs.getConf());
+        cnt++;
       }
     }
+    numReducers = cnt;
     collection = fs.open(new Path(collectionPath));
     stack = new Stack<>();
   }
@@ -142,26 +142,30 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     BytesWritable value = new BytesWritable();
     key.set(term);
     int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
+    //get the bytes for postings (including df)
     index[partition].get(key, value);
-
-    return decodePostings(value);
+    //helper function to decode the allByteBuffer(now the type is BytesWritable)
+    return decode(value);
   }
 
-  private ArrayListWritable<PairOfInts> decodePostings(BytesWritable value) throws IOException {
+  private ArrayListWritable<PairOfInts> decode(BytesWritable value) throws IOException {
     ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
-    byte[] valBytes = value.getBytes();
 
-    ByteArrayInputStream byteStream = new ByteArrayInputStream(valBytes);
-    DataInputStream dataStream = new DataInputStream(byteStream);
+    ByteArrayInputStream allByteInput = new ByteArrayInputStream(value.getBytes());
+    DataInputStream allDataInput = new DataInputStream(allByteInput);
 
-    int doc_no = 0;
-    int df = WritableUtils.readVInt(dataStream);
+    int docno = 0;
+    //we wrote the df last so we read it first
+    int df = WritableUtils.readVInt(allDataInput);
 
     for (int i = 0; i < df; i++) {
-      int gap = WritableUtils.readVInt(dataStream);
-      int tf = WritableUtils.readVInt(dataStream);
-      doc_no += gap;
-      postings.add(new PairOfInts(doc_no, tf));
+      //df represents how many (gap tf) pairs are in the posting list
+      //read gap then read tf
+      int gap = WritableUtils.readVInt(allDataInput);
+      int tf = WritableUtils.readVInt(allDataInput);
+      if(gap == 0 || tf == 0) break;
+      docno += gap;
+      postings.add(new PairOfInts(docno, tf));
     }
     return postings;
   }
