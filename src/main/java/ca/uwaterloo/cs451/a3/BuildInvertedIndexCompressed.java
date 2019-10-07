@@ -101,7 +101,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
       if (prevWord != null && !key.getLeftElement().equals(prevWord)) {
         //flush and write out the postings to the disk
         postingData.flush();
-        postingByte.flush();
 
         TERM.set(prevWord);
         //create the buffer we need for the final postings (including the df)
@@ -140,7 +139,6 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   @Override
   public void cleanup(Context context) throws IOException, InterruptedException {
     postingData.flush();
-    postingByte.flush();
     TERM.set(prevWord);
 
     ByteArrayOutputStream allByteBuffer = new ByteArrayOutputStream();

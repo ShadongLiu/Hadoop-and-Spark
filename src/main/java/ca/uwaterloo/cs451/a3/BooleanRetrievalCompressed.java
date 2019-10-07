@@ -144,9 +144,10 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
     //get the bytes for postings (including df)
     index[partition].get(key, value);
-    //helper function to decode the allByteBuffer(now the type is BytesWritable)
-    ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
 
+    //Next to decode the postings
+    ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
+    //grab the compressed indexing bytes as the inputs and prepare to read it
     ByteArrayInputStream allByteInput = new ByteArrayInputStream(value.getBytes());
     DataInputStream allDataInput = new DataInputStream(allByteInput);
 
@@ -157,7 +158,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     int df = WritableUtils.readVInt(allDataInput);
 
     for (int i = 0; i < df; i++) {
-      //df represents how many (gap tf) pairs are in the posting list
+      //df represents how many (gap tf) pairs are there in the posting list
       //read compressed gap and read compressed tf
       gap = WritableUtils.readVInt(allDataInput);
       tf = WritableUtils.readVInt(allDataInput);
