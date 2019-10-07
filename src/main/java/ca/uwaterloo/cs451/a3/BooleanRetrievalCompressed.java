@@ -155,15 +155,17 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     DataInputStream allDataInput = new DataInputStream(allByteInput);
 
     int docno = 0;
+    int gap = 0;
+    int tf = 0;
     //we wrote the df last so we read it first
     int df = WritableUtils.readVInt(allDataInput);
 
     for (int i = 0; i < df; i++) {
       //df represents how many (gap tf) pairs are in the posting list
       //read compressed gap and read compressed tf
-      int gap = WritableUtils.readVInt(allDataInput);
-      int tf = WritableUtils.readVInt(allDataInput);
-      
+      gap = WritableUtils.readVInt(allDataInput);
+      tf = WritableUtils.readVInt(allDataInput);
+
       docno += gap;
       postings.add(new PairOfInts(docno, tf));
     }
