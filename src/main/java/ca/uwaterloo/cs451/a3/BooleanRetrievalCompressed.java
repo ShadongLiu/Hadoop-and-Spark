@@ -141,6 +141,7 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     Text key = new Text();
     BytesWritable value = new BytesWritable();
     key.set(term);
+    //find the partition the term is in
     int partition = (term.hashCode() & Integer.MAX_VALUE) % numReducers;
     //get the bytes for postings (including df)
     index[partition].get(key, value);
@@ -155,18 +156,23 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     DataInputStream allDataInput = new DataInputStream(allByteInput);
 
     int docno = 0;
+    int gap = 0;
+    int tf = 0;
     //we wrote the df last so we read it first
     int df = WritableUtils.readVInt(allDataInput);
 
     for (int i = 0; i < df; i++) {
       //df represents how many (gap tf) pairs are in the posting list
-      //read gap then read tf
-      int gap = WritableUtils.readVInt(allDataInput);
-      int tf = WritableUtils.readVInt(allDataInput);
+      //read compressed gap then read compressed tf
+      gap = WritableUtils.readVInt(allDataInput);
+      tf = WritableUtils.readVInt(allDataInput);
       if(gap == 0 || tf == 0) break;
       docno += gap;
       postings.add(new PairOfInts(docno, tf));
     }
+    allByteInput.close();
+    allDataInput.close();
+
     return postings;
   }
 

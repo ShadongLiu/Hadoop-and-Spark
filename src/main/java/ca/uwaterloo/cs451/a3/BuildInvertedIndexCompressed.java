@@ -102,12 +102,11 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         //flush and write out the postings to the disk
         postingData.flush();
         postingByte.flush();
-        
+
         TERM.set(prevWord);
         //create the buffer we need for the final postings (including the df)
         ByteArrayOutputStream allByteBuffer = new ByteArrayOutputStream();
         DataOutputStream allDataBuffer = new DataOutputStream(allByteBuffer);
-
         //write df first since we want df comes first
         WritableUtils.writeVInt(allDataBuffer, df);
         //write postings bytes behind df byte
@@ -128,8 +127,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         int tf = iter.next().get();
         int gap = key.getRightElement() - prevDoc;
         prevDoc = key.getRightElement();
-        //Here we use gap compression(only encode gaps)
-        //We write gaps first since postings look like (docno(+gap), tf)
+        //Here use gap compression(only encode gaps)
+        //Write gaps first since postings look like (docno(+gap), tf)
         WritableUtils.writeVInt(postingData, gap);
         WritableUtils.writeVInt(postingData, tf);
       }
@@ -142,14 +141,13 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   public void cleanup(Context context) throws IOException, InterruptedException {
     postingData.flush();
     postingByte.flush();
+    TERM.set(prevWord);
 
     ByteArrayOutputStream allByteBuffer = new ByteArrayOutputStream();
     DataOutputStream allDataBuffer = new DataOutputStream(allByteBuffer);
-
     WritableUtils.writeVInt(allDataBuffer, df);
     allDataBuffer.write(postingByte.toByteArray());
 
-    TERM.set(prevWord);
     context.write(TERM, new BytesWritable(allByteBuffer.toByteArray()));
 
     postingByte.close();
