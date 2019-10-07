@@ -163,10 +163,13 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
       //read compressed gap and read compressed tf
       int gap = WritableUtils.readVInt(allDataInput);
       int tf = WritableUtils.readVInt(allDataInput);
-      if (docno == 0 || tf ==0) break;
+      //if (docno == 0 || tf ==0) break;
       docno += gap;
       postings.add(new PairOfInts(docno, tf));
     }
+
+    allByteInput.close();
+    allDataInput.close();
     return postings;
   }
 
