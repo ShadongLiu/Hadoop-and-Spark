@@ -145,10 +145,6 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     //get the bytes for postings (including df)
     index[partition].get(key, value);
     //helper function to decode the allByteBuffer(now the type is BytesWritable)
-    return decode(value);
-  }
-
-  private ArrayListWritable<PairOfInts> decode(BytesWritable value) throws IOException {
     ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
 
     ByteArrayInputStream allByteInput = new ByteArrayInputStream(value.getBytes());
