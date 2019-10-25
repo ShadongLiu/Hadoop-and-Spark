@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package io.bespin.java.mapreduce.pagerank;
-
-import com.google.common.base.Function;
-import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
-import edu.uci.ics.jung.algorithms.importance.Ranking;
-import edu.uci.ics.jung.algorithms.scoring.PageRankWithPriors;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.ParserProperties;
+package ca.uwaterloo.cs451.a4;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -32,6 +22,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.PriorityQueue;
 import java.util.Set;
+
+import com.google.common.base.Function;
+
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.ParserProperties;
+
+import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
+import edu.uci.ics.jung.algorithms.importance.Ranking;
+import edu.uci.ics.jung.algorithms.scoring.PageRankWithPriors;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
 
 /**
  * <p>
