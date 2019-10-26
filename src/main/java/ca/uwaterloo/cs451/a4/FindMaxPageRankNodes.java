@@ -17,6 +17,7 @@
 package ca.uwaterloo.cs451.a4;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -53,18 +54,24 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
 
   private static class MyMapper extends
       Mapper<IntWritable, PageRankNode, IntWritable, FloatWritable> {
-    private TopScoredObjects<Integer> queue;
+    private ArrayList<TopScoredObjects<Integer>> queue;
+    private ArrayList<Integer> sources;
 
     @Override
     public void setup(Context context) throws IOException {
       int k = context.getConfiguration().getInt("n", 100);
-      queue = new TopScoredObjects<>(k);
+      //queue = new TopScoredObjects<>(k);
     }
 
     @Override
     public void map(IntWritable nid, PageRankNode node, Context context) throws IOException,
         InterruptedException {
-      queue.add(node.getNodeId(), node.getPageRank());
+      for (int i = 0; i < sources.size(); i++) {
+        TopScoredObjects<Integer> q = queue.get(i);
+        q.add(node.getNodeId(), node.getPageRank().get(i));
+        queue.set(i,q);
+      }
+      
     }
 
     @Override
@@ -72,10 +79,14 @@ public class FindMaxPageRankNodes extends Configured implements Tool {
       IntWritable key = new IntWritable();
       FloatWritable value = new FloatWritable();
 
-      for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
+      int i = 0;
+      for (TopScoredObjects<Integer> q : queue) {
+        for (PairOfObjectFloat<Integer> pair : q.extractAll()) {
         key.set(pair.getLeftElement());
         value.set(pair.getRightElement());
         context.write(key, value);
+        }
+        i++;
       }
     }
   }

@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 
+import tl.lin.data.array.ArrayListOfFloatsWritable;
 import tl.lin.data.array.ArrayListOfIntsWritable;
 
 /**
@@ -51,16 +52,16 @@ public class PageRankNode implements Writable {
 
   private Type type;
   private int nodeid;
-  private float pagerank;
+  private ArrayListOfFloatsWritable pagerank;
   private ArrayListOfIntsWritable adjacencyList;
 
   public PageRankNode() {}
 
-  public float getPageRank() {
+  public ArrayListOfFloatsWritable getPageRank() {
     return pagerank;
   }
 
-  public void setPageRank(float p) {
+  public void setPageRank(ArrayListOfFloatsWritable p) {
     this.pagerank = p;
   }
 
@@ -101,12 +102,14 @@ public class PageRankNode implements Writable {
     nodeid = in.readInt();
 
     if (type.equals(Type.Mass)) {
-      pagerank = in.readFloat();
+      pagerank = new ArrayListOfFloatsWritable();
+      pagerank.readFields(in);
       return;
     }
 
     if (type.equals(Type.Complete)) {
-      pagerank = in.readFloat();
+      pagerank = new ArrayListOfFloatsWritable();
+      pagerank.readFields(in);
     }
 
     adjacencyList = new ArrayListOfIntsWritable();
@@ -125,12 +128,12 @@ public class PageRankNode implements Writable {
     out.writeInt(nodeid);
 
     if (type.equals(Type.Mass)) {
-      out.writeFloat(pagerank);
+      pagerank.write(out);
       return;
     }
 
     if (type.equals(Type.Complete)) {
-      out.writeFloat(pagerank);
+      pagerank.write(out);
     }
 
     adjacencyList.write(out);
