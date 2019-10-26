@@ -16,6 +16,10 @@
 
 package ca.uwaterloo.cs451.a4;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -40,13 +44,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import tl.lin.data.array.ArrayListOfFloats;
 import tl.lin.data.array.ArrayListOfFloatsWritable;
 import tl.lin.data.array.ArrayListOfIntsWritable;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.ArrayList;
 
 /**
  * <p>
@@ -74,8 +73,11 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
+      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      for (String src : srcs) {
+        sources.add(Integer.valueOf(src));
+      }
       node.setType(PageRankNode.Type.Complete);
-      //node.setPageRank((float) -StrictMath.log(n));
     }
 
     @Override

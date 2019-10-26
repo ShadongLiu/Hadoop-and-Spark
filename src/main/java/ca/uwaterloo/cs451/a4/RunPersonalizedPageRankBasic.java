@@ -509,7 +509,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     LOG.info(" - sources: " + sources);
     // LOG.info(" - useCombiner: " + useCombiner);
     // LOG.info(" - useInmapCombiner: " + useInMapperCombiner);
-    // LOG.info("computed number of partitions: " + numPartitions);
+    LOG.info("computed number of partitions: " + numPartitions);
 
     int numReduceTasks = numPartitions;
 
