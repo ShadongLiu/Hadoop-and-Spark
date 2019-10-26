@@ -330,7 +330,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     public void setup(Context context) throws IOException {
       Configuration conf = context.getConfiguration();
 
-      String[] mm = conf.getStrings("MissingMass");
+      String[] mm = conf.getStrings("MissingMass", "");
       for (String m  : mm) {
         missingMass.add(Float.valueOf(m));
       }
@@ -351,7 +351,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         if (Integer.valueOf(sources.get(i)) == nid.get()) {
           float jump = (float) Math.log(ALPHA);
           float link = (float) Math.log(1.0f - ALPHA)
-          + sumLogProbs(p.get(i), (float) (Math.log(missingMass.get(i))));
+          + sumLogProbs(p.get(i), (float) Math.log(missingMass.get(i)));
           p.set(i, sumLogProbs(jump, link));
         }else {
           float link = (float) Math.log(1.0f - ALPHA);
@@ -416,7 +416,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("number of nodes").create(NUM_NODES));
     options.addOption(OptionBuilder.withArgName("sources").hasArg()
-        .withDescription("sources").create(SOURCES));
+        .withDescription("sources nodes").create(SOURCES));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -506,7 +506,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     LOG.info(" - input: " + in);
     LOG.info(" - output: " + out);
     LOG.info(" - nodeCnt: " + numNodes);
-    LOG.info(" - sources " + sources);
+    LOG.info(" - sources: " + sources);
     // LOG.info(" - useCombiner: " + useCombiner);
     // LOG.info(" - useInmapCombiner: " + useInMapperCombiner);
     // LOG.info("computed number of partitions: " + numPartitions);
@@ -518,6 +518,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", false);
     //job.getConfiguration().set("mapred.child.java.opts", "-Xmx2048m");
     job.getConfiguration().set("PageRankMassPath", outm);
+    job.getConfiguration().setStrings(SOURCE_NODES, sources);
 
     job.setNumReduceTasks(numReduceTasks);
 
@@ -590,7 +591,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     LOG.info("PageRank: iteration " + j + ": Phase2");
     LOG.info(" - input: " + in);
     LOG.info(" - output: " + out);
-    LOG.info(" - sources " + sources);
+    LOG.info(" - sources: " + sources);
 
     job.getConfiguration().setBoolean("mapred.map.tasks.speculative.execution", false);
     job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", false);
