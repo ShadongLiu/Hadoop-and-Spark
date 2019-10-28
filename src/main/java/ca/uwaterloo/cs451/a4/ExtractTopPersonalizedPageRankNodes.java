@@ -241,21 +241,19 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(p)));
 
     String[] sourceNodes = sources.split(",");
-    int count = 0;
+    int lineCount = 0;
     String line;
-    //line = br.readLine();
     
     while ((line = br.readLine()) != null) {
-      if (count % n == 0) {
+      if (lineCount % n == 0) {
         System.out.println();
-        System.out.println("Sources: " + sourceNodes[count / n]);
+        System.out.println("Sources: " + sourceNodes[lineCount / n]);
       }
-      String[] lineContent = line.split("\\t");
-      float pageRank = Float.parseFloat(lineContent[0]);
-      int nodeid = Integer.parseInt(lineContent[1]);
+      String[] pairs = line.split("\\t");
+      float pageRank = Float.parseFloat(pairs[0]);
+      int nodeid = Integer.parseInt(pairs[1]);
       System.out.println(String.format("%.5f %d", pageRank, nodeid));
-      count++;
-      //line = br.readLine();
+      lineCount++;
     }
     br.close();
 
