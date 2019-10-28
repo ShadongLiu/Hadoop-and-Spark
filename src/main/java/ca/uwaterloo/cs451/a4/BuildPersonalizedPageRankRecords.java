@@ -73,9 +73,9 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
-      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
-      for (String src : srcs) {
-        sources.add(Integer.valueOf(src));
+      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
+      for (String sn : sourceNodes) {
+        sources.add(Integer.valueOf(sn));
       }
       node.setType(PageRankNode.Type.Complete);
     }
@@ -101,17 +101,16 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
 
-      float[] pageRank = new float[sources.size()];
+      float[] pageRanks = new float[sources.size()];
       for (int i = 0; i < sources.size(); i++) {
         if (sources.get(i) == nid.get()) {
-          pageRank[i] = (float) StrictMath.log(1);
+          pageRanks[i] = (float) StrictMath.log(1);
         }else {
-          pageRank[i] = (float) StrictMath.log(0);
+          pageRanks[i] = (float) StrictMath.log(0);
         }
       }
-      node.setPageRank(new ArrayListOfFloatsWritable(pageRank));
+      node.setPageRank(new ArrayListOfFloatsWritable(pageRanks));
       
-
       context.getCounter("graph", "numNodes").increment(1);
       context.getCounter("graph", "numEdges").increment(arr.length - 1);
 
