@@ -58,7 +58,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
   private static class MyMapper extends Mapper<IntWritable, PageRankNode, PairOfInts, FloatWritable> {
     private ArrayList<TopScoredObjects<Integer>> queue;
-    private ArrayList<Integer> sources;
+    //private ArrayList<Integer> sources;
     private static int num_source_nodes = 0;
 
     @Override
@@ -66,10 +66,10 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       int k = context.getConfiguration().getInt("n", 100);
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
       num_source_nodes = sourceNodes.length;
-      //sources = new ArrayList<Integer>();
-      for (String src : sourceNodes) {
-        sources.add(Integer.valueOf(src));
-      }
+      // sources = new ArrayList<Integer>();
+      // for (String src : sourceNodes) {
+      //   sources.add(Integer.valueOf(src));
+      // }
       queue = new ArrayList<TopScoredObjects<Integer>>();
       for (int i = 0; i < num_source_nodes; i++) {
         queue.add(new TopScoredObjects<Integer>(k));
