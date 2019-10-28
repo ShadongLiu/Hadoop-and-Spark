@@ -145,7 +145,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
         value.set(pair.getLeftElement());
         key.set((float)StrictMath.exp(pair.getRightElement()));
-        context.write(new Text(String.format("%.5f %d", key.get())), new Text(String.valueOf(value)));
+        context.write(new Text(String.format("%.5f", key.get())), new Text(String.valueOf(value)));
         }
         if (i < queue.size() - 1) {
           context.write(new Text(""), new Text(""));
@@ -242,13 +242,16 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     Path p = new Path(outputPath + "/part-r-00000");
     FileSystem fs = FileSystem.get(conf);
     BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(p)));
+    try{
       String line;
       line = br.readLine();
       while (line != null) {
         System.out.println(line);
         line = br.readLine();
       }
+    }finally {
       br.close();
+    }
 
     return 0;
   }
