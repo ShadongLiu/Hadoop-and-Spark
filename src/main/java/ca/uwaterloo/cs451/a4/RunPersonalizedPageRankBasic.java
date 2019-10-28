@@ -95,7 +95,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     private static final PageRankNode intermediateStructure = new PageRankNode();
     private static final ArrayList<Integer> sources = new ArrayList<Integer>();
 
-    //get the sources ready
     @Override
     public void setup(Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode>.Context context) {
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
@@ -122,10 +121,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         // Each neighbor gets an equal share of PageRank mass.
         ArrayListOfIntsWritable list = node.getAdjacencyList(); 
         
-        float[] mass = new float[sources.size()];
+        float[] masses = new float[sources.size()];
         for (int i = 0; i < sources.size(); i++) {
           //evenly distributed mass along each outgoing edges
-          mass[i] = node.getPageRank().get(i) - (float) StrictMath.log(list.size());
+          masses[i] = node.getPageRank().get(i) - (float) StrictMath.log(list.size());
         }
 
         context.getCounter(PageRank.edges).increment(list.size());
@@ -135,7 +134,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
           neighbor.set(list.get(i));
           intermediateMass.setNodeId(list.get(i));
           intermediateMass.setType(PageRankNode.Type.Mass);
-          intermediateMass.setPageRank(new ArrayListOfFloatsWritable(mass));
+          intermediateMass.setPageRank(new ArrayListOfFloatsWritable(masses));
 
           // Emit messages with PageRank mass to neighbors.
           //i.e: n1[n2, n4] -> n2, n4 with pagerank mass
@@ -149,7 +148,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       context.getCounter(PageRank.massMessages).increment(massMessages);
     }
   
-
+  //found need to clear after each map or reduce or combine job since it may cause spill failed exception
   @Override
   public void cleanup(Context context) throws IOException{
     sources.clear();
@@ -526,13 +525,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     job.setOutputKeyClass(IntWritable.class);
     job.setOutputValueClass(PageRankNode.class);
 
-    //job.setMapperClass(useInMapperCombiner ? MapWithInMapperCombiningClass.class : MapClass.class);
     job.setMapperClass(MapClass.class);
-    // if (useCombiner) {
-    //   job.setCombinerClass(CombineClass.class);
-    // }
     job.setCombinerClass(CombineClass.class);
-
     job.setReducerClass(ReduceClass.class);
 
     FileSystem.get(getConf()).delete(new Path(out), true);
