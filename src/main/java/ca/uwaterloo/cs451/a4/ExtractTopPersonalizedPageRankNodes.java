@@ -133,10 +133,10 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       FloatWritable key = new FloatWritable();
       IntWritable value = new IntWritable();
       
-      int i = 0;
-      for (TopScoredObjects<Integer> q : queue) {
+      
+      for (int i = 0; i < num_source_nodes; i++){
         context.write(new Text("Source: " + sources.get(i)), new Text(""));
-        for (PairOfObjectFloat<Integer> pair : q.extractAll()) {
+        for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
         
           key.set((float)StrictMath.exp(pair.getRightElement()));
           value.set(pair.getLeftElement());
@@ -148,7 +148,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         if (i < queue.size() - 1) {
           context.write(new Text(""), new Text(""));
         }
-        i++;
+
       }
       
     }
