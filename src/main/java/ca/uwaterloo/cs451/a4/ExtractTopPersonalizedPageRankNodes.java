@@ -96,7 +96,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     }
   }
 
-  private static class MyReducer extends Reducer<PairOfInts, FloatWritable, Text, Text> {
+  private static class MyReducer extends Reducer<PairOfInts, FloatWritable, FloatWritable, IntWritable> {
     private ArrayList<TopScoredObjects<Integer>> queue;
     private ArrayList<Integer> sources;
     private static int num_source_nodes = 0;
@@ -135,19 +135,20 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       
       
       for (int i = 0; i < num_source_nodes; i++){
-        context.write(new Text("Source: " + sources.get(i)), new Text(""));
+        //context.write(new Text("Source: " + sources.get(i)), new Text(""));
         for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
         
           key.set((float)StrictMath.exp(pair.getRightElement()));
           value.set(pair.getLeftElement());
+          context.write(key, value);
     
-          context.write(new Text(String.format("%.5f %d", key.get())), new Text(String.valueOf(value)));
+          // context.write(new Text(String.format("%.5f %d", key.get())), new Text(String.valueOf(value)));
 
         }
 
-        if (i < queue.size() - 1) {
-          context.write(new Text(""), new Text(""));
-        }
+        // if (i < queue.size() - 1) {
+        //   context.write(new Text(""), new Text(""));
+        // }
 
       }
       
@@ -197,18 +198,18 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(TOP));
-    String srcStr = cmdline.getOptionValue(SOURCES);
+    String sources = cmdline.getOptionValue(SOURCES);
 
     LOG.info("Tool name: " + ExtractTopPersonalizedPageRankNodes.class.getSimpleName());
     LOG.info(" - input: " + inputPath);
     LOG.info(" - output: " + outputPath);
     LOG.info(" - top: " + n);
-    LOG.info(" - sources: " + srcStr);
+    LOG.info(" - sources: " + sources);
 
     Configuration conf = getConf();
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
     conf.setInt("n", n);
-    conf.setStrings(SOURCE_NODES_FIELD, srcStr);
+    conf.setStrings(SOURCE_NODES_FIELD, sources);
 
     Job job = Job.getInstance(conf);
     job.setJobName(ExtractTopPersonalizedPageRankNodes.class.getName() + ":" + inputPath);
@@ -237,19 +238,27 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     job.waitForCompletion(true);
 
+    String[] sourceNodes = sources.split(",");
+
     Path p = new Path(outputPath + "/part-r-00000");
     FileSystem fs = FileSystem.get(conf);
     InputStreamReader isr = new InputStreamReader(fs.open(p));
     BufferedReader br = new BufferedReader(isr);
-    try {
+    int count = 0;
+    
       String line = br.readLine();
       while (line != null) {
-        System.out.println(line);
-        line = br.readLine();
+        if (count % n == 0) {
+          System.out.println();
+          System.out.println("Source:\t" + sourceNodes[count / n]);
+        }
+        String[] lineContent = line.split("\\t");
+        float pageRank = Float.parseFloat(lineContent[0]);
+        int nodeID = Integer.parseInt(lineContent[1]);
+        System.out.println(String.format("%.5f %d", pageRank, nodeID));
+        count++;
       }
-    }finally {
-      br.close();
-    }
+      
 
     return 0;
   }
