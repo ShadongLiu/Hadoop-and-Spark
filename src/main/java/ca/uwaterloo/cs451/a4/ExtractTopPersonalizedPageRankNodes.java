@@ -253,7 +253,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       float pageRank = Float.parseFloat(lineContent[0]);
       int nodeid = Integer.parseInt(lineContent[1]);
       System.out.println(String.format("%.5f %d", pageRank, nodeid));
-      //line = br.readLine();
+      line = br.readLine();
     }
     br.close();
 
