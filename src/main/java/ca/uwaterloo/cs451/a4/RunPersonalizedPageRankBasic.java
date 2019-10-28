@@ -75,7 +75,7 @@ import tl.lin.data.array.ArrayListOfIntsWritable;
  */
 public class RunPersonalizedPageRankBasic extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(RunPersonalizedPageRankBasic.class);
-  private static final String SOURCE_NODES = "node.src";
+  private static final String SOURCE_NODES_FIELD = "node.src";
 
   private static enum PageRank {
     nodes, edges, massMessages, massMessagesSaved, massMessagesReceived, missingStructure
@@ -465,13 +465,12 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     // Each iteration consists of two phases (two MapReduce jobs).
 
     // Job 1: distribute PageRank mass along outgoing edges.
-    ArrayList<Float> mass = phase1(i, j, basePath, numNodes, sources);
+    float[] masses = phase1(i, j, basePath, numNodes, sources);
 
     // Find out how much PageRank mass got lost at the dangling nodes.
-    ArrayList<Float> missing = new ArrayList<Float>();
-    for (int k = 0; k < mass.size(); k++) {
-      float m = 1.0f - (float) StrictMath.exp(mass.get(k));
-      missing.add(m < 0.0f ? 0.0f : m);
+    float[] missing = new float[masses.length];
+    for (int k = 0; k < missing.length; k++) {
+      missing[k] = 1.0f - (float) StrictMath.exp(masses[k]);
     }
 
     // Job 2: distribute missing mass, take care of random jump factor.
@@ -479,7 +478,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
   }
 
   // Job 1: distribute PageRank mass along outgoing edges.
-  private ArrayList<Float> phase1(int i, int j, String basePath, int numNodes, String sources) 
+  private float[] phase1(int i, int j, String basePath, int numNodes, String sources) 
     throws Exception {
     Job job = Job.getInstance(getConf());
     job.setJobName("PageRank:Basic:iteration" + j + ":Phase1");
@@ -544,37 +543,32 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     System.out.println("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
     String[] sourceNodes = sources.split(",");
-    ArrayList<Float> mass = new ArrayList<Float>();
-
-    for (int k = 0; k < sourceNodes.length; k++) {
-      mass.add(Float.NEGATIVE_INFINITY);
-    }
+    int numSources = sourceNodes.length;
+    float[] masses = new float[numSources];
+    Arrays.fill(masses, Float.NEGATIVE_INFINITY);
 
     FileSystem fs = FileSystem.get(getConf());
     for (FileStatus f : fs.listStatus(new Path(outm))) {
       FSDataInputStream fin = fs.open(f.getPath());
-      for (int k = 0; k < sourceNodes.length; k++) {
-        mass.set(k, sumLogProbs(mass.get(k), fin.readFloat()));
+      for (int k = 0; k < numSources; k++) {
+        masses[k] = sumLogProbs(masses[k], fin.readFloat());
       }
       
       fin.close();
     }
-    return mass;
+    return masses;
   }
 
   // Job 2: distribute missing mass, take care of random jump factor.
-  private void phase2(int i, int j, ArrayList<Float> missing, String basePath, int numNodes, String sources) 
+  private void phase2(int i, int j, float[] missing, String basePath, int numNodes, String sources) 
     throws Exception {
     Job job = Job.getInstance(getConf());
     job.setJobName("PageRank:Basic:iteration" + j + ":Phase2");
     job.setJarByClass(RunPersonalizedPageRankBasic.class);
 
-    String missingStr = "";
-    for (int k = 0; k < missing.size(); k++) {
-      missingStr += String.valueOf(missing.get(k));
-      if (k < missing.size() - 1){
-        missingStr += ",";
-      }
+    String[] missingStr = new String[missing.length];
+    for (int k = 0; k < missing.length; k++) {
+      missingStr[k] = Float.toString(missing[k]);
     }
 
     LOG.info("missing PageRank mass: " + missingStr);

@@ -54,7 +54,7 @@ import tl.lin.data.queue.TopScoredObjects;
 
 public class ExtractTopPersonalizedPageRankNodes extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
-  private static final String SOURCE_NODES = "node.src";
+  private static final String SOURCE_NODES_FIELD = "node.src";
 
   private static class MyMapper extends Mapper<IntWritable, PageRankNode, PairOfInts, FloatWritable> {
     private ArrayList<TopScoredObjects<Integer>> queue;
@@ -63,7 +63,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     @Override
     public void setup(Context context) throws IOException {
       int k = context.getConfiguration().getInt("n", 100);
-      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       sources = new ArrayList<Integer>();
       for (String src : srcs) {
         sources.add(Integer.valueOf(src));
@@ -108,7 +108,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     @Override
     public void setup(Context context) throws IOException {
       int k = context.getConfiguration().getInt("n", 100);
-      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       sources = new ArrayList<Integer>();
       for (String src : srcs) {
         sources.add(Integer.valueOf(src));
@@ -210,7 +210,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     Configuration conf = getConf();
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
     conf.setInt("n", n);
-    conf.setStrings(SOURCE_NODES, srcStr);
+    conf.setStrings(SOURCE_NODES_FIELD, srcStr);
 
     Job job = Job.getInstance(conf);
     job.setJobName(ExtractTopPersonalizedPageRankNodes.class.getName() + ":" + inputPath);

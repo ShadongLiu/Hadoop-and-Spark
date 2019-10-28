@@ -60,7 +60,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
   private static final Logger LOG = Logger.getLogger(BuildPersonalizedPageRankRecords.class);
 
   private static final String NODE_CNT_FIELD = "node.cnt";
-  private static final String SOURCE_NODES = "node.src";
+  private static final String SOURCE_NODES_FIELD = "node.src";
 
   private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNode> {
     private static final IntWritable nid = new IntWritable();
@@ -73,7 +73,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
-      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       for (String src : srcs) {
         sources.add(Integer.valueOf(src));
       }
@@ -179,7 +179,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 
     Configuration conf = getConf();
     conf.setInt(NODE_CNT_FIELD, n);
-    conf.setStrings(SOURCE_NODES, sources);
+    conf.setStrings(SOURCE_NODES_FIELD, sources);
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
 
     Job job = Job.getInstance(conf);
