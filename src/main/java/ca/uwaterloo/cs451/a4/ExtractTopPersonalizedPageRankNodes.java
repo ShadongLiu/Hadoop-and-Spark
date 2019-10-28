@@ -58,7 +58,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
   private static class MyMapper extends Mapper<IntWritable, PageRankNode, PairOfInts, FloatWritable> {
     private ArrayList<TopScoredObjects<Integer>> queue;
-    //private ArrayList<Integer> sources;
+    private ArrayList<Integer> sources;
     private static int num_source_nodes = 0;
 
     @Override
@@ -67,9 +67,9 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
       num_source_nodes = sourceNodes.length;
       //sources = new ArrayList<Integer>();
-      // for (String sn : sourceNodes) {
-      //   sources.add(Integer.valueOf(sn));
-      // }
+      for (String sn : sourceNodes) {
+        sources.add(Integer.valueOf(sn));
+      }
       queue = new ArrayList<TopScoredObjects<Integer>>();
       for (int i = 0; i < num_source_nodes; i++) {
         queue.add(new TopScoredObjects<Integer>(k));
@@ -145,7 +145,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
         value.set(pair.getLeftElement());
         key.set((float)StrictMath.exp(pair.getRightElement()));
-        context.write(new Text(String.format("%.5f %d", key.get())), new Text(String.valueOf(value)));
+        context.write(new Text(String.format("%.5f", key.get())), new Text(String.valueOf(value)));
         }
         if (i < queue.size() - 1) {
           context.write(new Text(""), new Text(""));
