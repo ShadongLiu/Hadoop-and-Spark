@@ -59,17 +59,19 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
   private static class MyMapper extends Mapper<IntWritable, PageRankNode, PairOfInts, FloatWritable> {
     private ArrayList<TopScoredObjects<Integer>> queue;
     private ArrayList<Integer> sources;
+    private static int num_source_nodes = 0;
 
     @Override
     public void setup(Context context) throws IOException {
       int k = context.getConfiguration().getInt("n", 100);
-      String[] srcs = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      num_source_nodes = sourceNodes.length;
       sources = new ArrayList<Integer>();
-      for (String src : srcs) {
+      for (String src : sourceNodes) {
         sources.add(Integer.valueOf(src));
       }
       queue = new ArrayList<TopScoredObjects<Integer>>();
-      for (int i = 0; i < sources.size(); i++) {
+      for (int i = 0; i < num_source_nodes; i++) {
         queue.add(new TopScoredObjects<Integer>(k));
       }
     }
@@ -89,14 +91,12 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       PairOfInts key = new PairOfInts();
       FloatWritable value = new FloatWritable();
 
-      int i = 0;
-      for (TopScoredObjects<Integer> q : queue) {
-        for (PairOfObjectFloat<Integer> pair : q.extractAll()) {
+      for (int i = 0; i < num_source_nodes; i++) {
+        for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
           key.set(i, pair.getLeftElement());
           value.set(pair.getRightElement());
           context.write(key, value);
         }
-        i++;
       }
     }
   }
@@ -134,18 +134,16 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     @Override
     public void cleanup(Context context) throws IOException, InterruptedException {
-      IntWritable key = new IntWritable();
-      FloatWritable value = new FloatWritable();
+      FloatWritable key = new FloatWritable();
+      IntWritable value = new IntWritable();
 
       int i = 0;
       for (TopScoredObjects<Integer> q : queue) {
         context.write(new Text("Source: " + sources.get(i)), new Text(""));
         for (PairOfObjectFloat<Integer> pair : q.extractAll()) {
-        key.set(pair.getLeftElement());
-        value.set((float)StrictMath.exp(pair.getRightElement()));
-        context.write(new Text(String.format("%.5f", value.get())), new Text(String.valueOf(key)));
-        // We're outputting a string so we can control the formatting.
-        //value.set(String.format("%.5f", pair.getRightElement()));
+        value.set(pair.getLeftElement());
+        key.set((float)StrictMath.exp(pair.getRightElement()));
+        context.write(new Text(String.format("%.5f", key.get())), new Text(String.valueOf(value)));
         }
         if (i < queue.size() - 1) {
           context.write(new Text(""), new Text(""));
