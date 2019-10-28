@@ -243,9 +243,9 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     String[] sourceNodes = sources.split(",");
     int count = 0;
     String line;
-    line = br.readLine();
+    //line = br.readLine();
     
-    while (line != null) {
+    while ((line = br.readLine()) != null) {
       if (count % n == 0) {
         System.out.println();
         System.out.println("Sources: " + sourceNodes[count / n]);
