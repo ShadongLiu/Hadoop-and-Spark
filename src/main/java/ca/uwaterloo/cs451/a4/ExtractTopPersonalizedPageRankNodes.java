@@ -145,10 +145,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
         value.set(pair.getLeftElement());
         key.set((float)StrictMath.exp(pair.getRightElement()));
-        context.write(new Text(String.format("%.5f", key.get())), new Text(String.valueOf(value)));
-        }
-        if (i < queue.size() - 1) {
-          context.write(new Text(""), new Text(""));
+        context.write(new Text(String.format("%.5f %d", key.get())), new Text(String.valueOf(value)));
         }
         
       }
