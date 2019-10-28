@@ -244,17 +244,18 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     int count = 0;
     String line;
     line = br.readLine();
+    
     while (line != null) {
       if (count % n == 0) {
         System.out.println();
-        System.out.println("Sources:\t" + sourceNodes[count / n]);
+        System.out.println("Sources: " + sourceNodes[count / n]);
       }
       String[] lineContent = line.split("\\t");
       float pageRank = Float.parseFloat(lineContent[0]);
       int nodeid = Integer.parseInt(lineContent[1]);
       System.out.println(String.format("%.5f %d", pageRank, nodeid));
       count++;
-      line = br.readLine();
+      //line = br.readLine();
     }
     br.close();
 
