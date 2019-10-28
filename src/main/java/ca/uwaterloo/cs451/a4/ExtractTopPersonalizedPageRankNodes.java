@@ -66,7 +66,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       int k = context.getConfiguration().getInt("n", 100);
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
       num_source_nodes = sourceNodes.length;
-      sources = new ArrayList<Integer>();
+      //sources = new ArrayList<Integer>();
       for (String src : sourceNodes) {
         sources.add(Integer.valueOf(src));
       }
