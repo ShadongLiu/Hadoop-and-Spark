@@ -98,7 +98,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     //get the sources ready
     @Override
     public void setup(Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode>.Context context) {
-      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
       }
@@ -164,7 +164,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
     @Override
     public void setup(Context context) throws IOException{
-      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
       }
@@ -220,7 +220,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     
     @Override
     public void setup(Context context) throws IOException {
-      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
         totalMass.add(Float.NEGATIVE_INFINITY);
@@ -331,7 +331,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     public void setup(Context context) throws IOException {
       Configuration conf = context.getConfiguration();
       
-      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES, "");
+      String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
       }
@@ -510,7 +510,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", false);
     //job.getConfiguration().set("mapred.child.java.opts", "-Xmx2048m");
     job.getConfiguration().set("PageRankMassPath", outm);
-    job.getConfiguration().setStrings(SOURCE_NODES, sources);
+    job.getConfiguration().setStrings(SOURCE_NODES_FIELD, sources);
 
     job.setNumReduceTasks(numReduceTasks);
 
@@ -586,7 +586,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     job.getConfiguration().setBoolean("mapred.reduce.tasks.speculative.execution", false);
     job.getConfiguration().setStrings("MissingMass", missingStr);
     job.getConfiguration().setInt("NodeCount", numNodes);
-    job.getConfiguration().setStrings(SOURCE_NODES, sources);
+    job.getConfiguration().setStrings(SOURCE_NODES_FIELD, sources);
 
     job.setNumReduceTasks(0);
 
