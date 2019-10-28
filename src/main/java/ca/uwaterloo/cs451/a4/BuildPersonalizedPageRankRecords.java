@@ -101,8 +101,10 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
 
-      float[] pageRanks = new float[sources.size()];
-      for (int i = 0; i < sources.size(); i++) {
+      int numSources = sources.size();
+      float[] pageRanks = new float[numSources];
+      for (int i = 0; i < numSources; i++) {
+        //check if it is the source node
         if (sources.get(i) == nid.get()) {
           pageRanks[i] = (float) StrictMath.log(1);
         }else {

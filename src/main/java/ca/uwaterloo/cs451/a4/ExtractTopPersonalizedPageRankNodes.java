@@ -76,6 +76,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     public void map(IntWritable nid, PageRankNode node, Context context) throws IOException, InterruptedException {
       for (int i = 0; i < num_source_nodes; i++) {
         TopScoredObjects<Integer> q = queue.get(i);
+        //pair of (object float) : (id, pagerank)
         q.add(node.getNodeId(), node.getPageRank().get(i));
         queue.set(i, q);
       }
@@ -89,7 +90,9 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
       for (int i = 0; i < num_source_nodes; i++) {
         for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
+          //key is (sourenodenumber, nodeID)
           key.set(i, pair.getLeftElement());
+          //pair is the pagerank of node
           value.set(pair.getRightElement());
           context.write(key, value);
         }
@@ -121,6 +124,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     public void reduce(PairOfInts nid, Iterable<FloatWritable> iterable, Context context) throws IOException {
       Iterator<FloatWritable> iter = iterable.iterator();
       TopScoredObjects<Integer> q = queue.get(nid.getLeftElement());
+      //insert pair of (nodeid pagerank)
       q.add((int)nid.getRightElement(), iter.next().get());
       queue.set(nid.getLeftElement(), q);
 
@@ -137,19 +141,15 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
       
       for (int i = 0; i < num_source_nodes; i++){
-        //context.write(new Text("Source: " + sources.get(i)), new Text(""));
-        for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
-        value.set(pair.getLeftElement());
-        key.set((float)StrictMath.exp(pair.getRightElement()));
-        context.write(key, value);
-        //context.write(new Text(String.format("%.5f", key.get())), new Text(String.valueOf(value)));
-        }
-        // if (i < queue.size() - 1) {
-        //   context.write(new Text(""), new Text(""));
-        // }
         
-      }
-      
+        for (PairOfObjectFloat<Integer> pair : queue.get(i).extractAll()) {
+          //value is nodeid
+          value.set(pair.getLeftElement());
+          //key is pagerank
+          key.set((float)StrictMath.exp(pair.getRightElement()));
+          context.write(key, value);
+        } 
+      } 
     }
   }
 
@@ -252,6 +252,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       String[] pairs = line.split("\\t");
       float pageRank = Float.parseFloat(pairs[0]);
       int nodeid = Integer.parseInt(pairs[1]);
+      
       System.out.println(String.format("%.5f %d", pageRank, nodeid));
       lineCount++;
     }
