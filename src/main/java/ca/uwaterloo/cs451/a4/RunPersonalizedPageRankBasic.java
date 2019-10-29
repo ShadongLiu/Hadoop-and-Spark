@@ -161,16 +161,16 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
   private static class CombineClass extends
       Reducer<IntWritable, PageRankNode, IntWritable, PageRankNode> {
     private static final PageRankNode intermediateMass = new PageRankNode();
-    private static final ArrayList<Integer> sources = new ArrayList<Integer>();
+    //private static final ArrayList<Integer> sources = new ArrayList<Integer>();
     private static int num_source_nodes = 0;
 
     @Override
     public void setup(Context context) throws IOException{
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       num_source_nodes = sourceNodes.length;
-      for (String sn : sourceNodes) {
-        sources.add(Integer.valueOf(sn));
-      }
+      // for (String sn : sourceNodes) {
+      //   sources.add(Integer.valueOf(sn));
+      // }
     }
 
     @Override
@@ -207,10 +207,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       }
     }
 
-    @Override
-    public void cleanup(Context context) throws IOException{
-      sources.clear();
-    }
+    // @Override
+    // public void cleanup(Context context) throws IOException{
+    //   sources.clear();
+    // }
   }
 
   // Reduce: sums incoming PageRank contributions, rewrite graph structure.
