@@ -94,10 +94,12 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     // For passing along node structure.
     private static final PageRankNode intermediateStructure = new PageRankNode();
     private static final ArrayList<Integer> sources = new ArrayList<Integer>();
+    private static int num_source_nodes = 0;
 
     @Override
     public void setup(Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode>.Context context) {
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
+      num_source_nodes = sourceNodes.length;
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
       }
@@ -121,8 +123,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         // Each neighbor gets an equal share of PageRank mass.
         ArrayListOfIntsWritable list = node.getAdjacencyList(); 
         
-        float[] masses = new float[sources.size()];
-        for (int i = 0; i < sources.size(); i++) {
+        float[] masses = new float[num_source_nodes];
+        for (int i = 0; i < num_source_nodes; i++) {
           //evenly distributed mass along each outgoing edges
           masses[i] = node.getPageRank().get(i) - (float) StrictMath.log(list.size());
         }
@@ -160,10 +162,12 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       Reducer<IntWritable, PageRankNode, IntWritable, PageRankNode> {
     private static final PageRankNode intermediateMass = new PageRankNode();
     private static final ArrayList<Integer> sources = new ArrayList<Integer>();
+    private static int num_source_nodes = 0;
 
     @Override
     public void setup(Context context) throws IOException{
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
+      num_source_nodes = sourceNodes.length;
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
       }
@@ -175,8 +179,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       int massMessages = 0;
 
       // Remember, PageRank mass is stored as a log prob.
-      float[] masses = new float[sources.size()];
-      for (int i = 0; i < sources.size(); i++) {
+      float[] masses = new float[num_source_nodes];
+      for (int i = 0; i < num_source_nodes; i++) {
         masses[i] = Float.NEGATIVE_INFINITY;
       }
       
@@ -186,7 +190,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
           context.write(nid, n);
         } else {
           // Accumulate PageRank mass contributions.
-          for (int i = 0; i < sources.size(); i++) {
+          for (int i = 0; i < num_source_nodes; i++) {
             masses[i] = sumLogProbs(masses[i], n.getPageRank().get(i));
           }
           massMessages++;
@@ -216,10 +220,12 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     // through dangling nodes.
     private static final ArrayList<Float> totalMass = new ArrayList<Float>();
     private static final ArrayList<Integer> sources = new ArrayList<Integer>();
+    private static int num_source_nodes = 0;
     
     @Override
     public void setup(Context context) throws IOException {
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
+      num_source_nodes = sourceNodes.length;
       for (String sn : sourceNodes) {
         sources.add(Integer.valueOf(sn));
         totalMass.add(Float.NEGATIVE_INFINITY);
@@ -241,8 +247,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       int massMessagesReceived = 0;
       int structureReceived = 0;
 
-      float[] masses = new float[sources.size()];
-      for (int i = 0; i < sources.size(); i++) {
+      float[] masses = new float[num_source_nodes];
+      for (int i = 0; i < num_source_nodes; i++) {
         masses[i] = Float.NEGATIVE_INFINITY;
       }
 
@@ -257,7 +263,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
           node.setAdjacencyList(list);
         } else {
           // This is a message that contains PageRank mass; accumulate.
-          for (int i = 0; i < sources.size(); i++) {
+          for (int i = 0; i < num_source_nodes; i++) {
             masses[i] = sumLogProbs(masses[i], n.getPageRank().get(i));
           }
           massMessagesReceived++;
