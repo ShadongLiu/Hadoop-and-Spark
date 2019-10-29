@@ -93,16 +93,16 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
     // For passing along node structure.
     private static final PageRankNode intermediateStructure = new PageRankNode();
-    private static final ArrayList<Integer> sources = new ArrayList<Integer>();
+    //private static final ArrayList<Integer> sources = new ArrayList<Integer>();
     private static int num_source_nodes = 0;
 
     @Override
     public void setup(Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode>.Context context) {
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
       num_source_nodes = sourceNodes.length;
-      for (String sn : sourceNodes) {
-        sources.add(Integer.valueOf(sn));
-      }
+      // for (String sn : sourceNodes) {
+      //   sources.add(Integer.valueOf(sn));
+      // }
     }
 
     @Override
@@ -151,10 +151,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     }
   
   //found need to clear after each map or reduce or combine job since it may cause spill failed eception
-  @Override
-  public void cleanup(Context context) throws IOException{
-    sources.clear();
-  }
+  // @Override
+  // public void cleanup(Context context) throws IOException{
+  //   sources.clear();
+  // }
 }
 
   // Combiner: sums partial PageRank contributions and passes node structure along.
