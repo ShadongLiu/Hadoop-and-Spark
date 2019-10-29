@@ -298,8 +298,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         out.writeFloat(totalMass.get(i));
       }
       out.close();
-
-      totalMass.clear();
     }
   }
 
