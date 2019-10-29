@@ -93,13 +93,14 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
     // For passing along node structure.
     private static final PageRankNode intermediateStructure = new PageRankNode();
-
-    private static int num_source_nodes = 0;
+    private static final ArrayList<Integer> sources = new ArrayList<Integer>();
 
     @Override
     public void setup(Mapper<IntWritable, PageRankNode, IntWritable, PageRankNode>.Context context) {
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
-      num_source_nodes = sourceNodes.length;
+      for (String sn : sourceNodes) {
+        sources.add(Integer.valueOf(sn));
+      }
     }
 
     @Override
@@ -120,8 +121,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         // Each neighbor gets an equal share of PageRank mass.
         ArrayListOfIntsWritable list = node.getAdjacencyList(); 
         
-        float[] masses = new float[num_source_nodes];
-        for (int i = 0; i < num_source_nodes; i++) {
+        float[] masses = new float[sources.size()];
+        for (int i = 0; i < sources.size(); i++) {
           //evenly distributed mass along each outgoing edges
           masses[i] = node.getPageRank().get(i) - (float) StrictMath.log(list.size());
         }
@@ -147,19 +148,25 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       context.getCounter(PageRank.massMessages).increment(massMessages);
     }
   
+  //found need to clear after each map or reduce or combine job since it may cause spill failed eception
+  @Override
+  public void cleanup(Context context) throws IOException{
+    sources.clear();
+  }
 }
 
   // Combiner: sums partial PageRank contributions and passes node structure along.
   private static class CombineClass extends
       Reducer<IntWritable, PageRankNode, IntWritable, PageRankNode> {
     private static final PageRankNode intermediateMass = new PageRankNode();
-    
-    private static int num_source_nodes = 0;
+    private static final ArrayList<Integer> sources = new ArrayList<Integer>();
 
     @Override
     public void setup(Context context) throws IOException{
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
-      num_source_nodes = sourceNodes.length;
+      for (String sn : sourceNodes) {
+        sources.add(Integer.valueOf(sn));
+      }
     }
 
     @Override
@@ -168,8 +175,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       int massMessages = 0;
 
       // Remember, PageRank mass is stored as a log prob.
-      float[] masses = new float[num_source_nodes];
-      for (int i = 0; i < num_source_nodes; i++) {
+      float[] masses = new float[sources.size()];
+      for (int i = 0; i < sources.size(); i++) {
         masses[i] = Float.NEGATIVE_INFINITY;
       }
       
@@ -179,7 +186,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
           context.write(nid, n);
         } else {
           // Accumulate PageRank mass contributions.
-          for (int i = 0; i < num_source_nodes; i++) {
+          for (int i = 0; i < sources.size(); i++) {
             masses[i] = sumLogProbs(masses[i], n.getPageRank().get(i));
           }
           massMessages++;
@@ -196,6 +203,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       }
     }
 
+    @Override
+    public void cleanup(Context context) throws IOException{
+      sources.clear();
+    }
   }
 
   // Reduce: sums incoming PageRank contributions, rewrite graph structure.
@@ -204,13 +215,15 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     // For keeping track of PageRank mass encountered, so we can compute missing PageRank mass lost
     // through dangling nodes.
     private static final ArrayList<Float> totalMass = new ArrayList<Float>();
+    private static final ArrayList<Integer> sources = new ArrayList<Integer>();
     
-    private static int num_source_nodes = 0;
-
     @Override
     public void setup(Context context) throws IOException {
       String[] sourceNodes = context.getConfiguration().getStrings(SOURCE_NODES_FIELD, "");
-      num_source_nodes = sourceNodes.length;
+      for (String sn : sourceNodes) {
+        sources.add(Integer.valueOf(sn));
+        totalMass.add(Float.NEGATIVE_INFINITY);
+      }
   }
 
 
@@ -228,8 +241,8 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       int massMessagesReceived = 0;
       int structureReceived = 0;
 
-      float[] masses = new float[num_source_nodes];
-      for (int i = 0; i < num_source_nodes; i++) {
+      float[] masses = new float[sources.size()];
+      for (int i = 0; i < sources.size(); i++) {
         masses[i] = Float.NEGATIVE_INFINITY;
       }
 
@@ -244,7 +257,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
           node.setAdjacencyList(list);
         } else {
           // This is a message that contains PageRank mass; accumulate.
-          for (int i = 0; i < num_source_nodes; i++) {
+          for (int i = 0; i < sources.size(); i++) {
             masses[i] = sumLogProbs(masses[i], n.getPageRank().get(i));
           }
           massMessagesReceived++;
@@ -261,7 +274,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         context.write(nid, node);
 
         // Keep track of total PageRank mass.
-        for (int i = 0; i < num_source_nodes; i++) {
+        for (int i = 0; i < sources.size(); i++) {
           totalMass.set(i, sumLogProbs(totalMass.get(i), masses[i]));
         }
         
@@ -294,10 +307,13 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
       FileSystem fs = FileSystem.get(context.getConfiguration());
       FSDataOutputStream out = fs.create(new Path(path + "/" + taskId), false);
       //out.writeFloat(totalMass);
-      for (int i = 0; i < num_source_nodes; i++) {
+      for (int i = 0; i < sources.size(); i++) {
         out.writeFloat(totalMass.get(i));
       }
       out.close();
+
+      sources.clear();
+      totalMass.clear();
     }
   }
 
@@ -309,7 +325,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
     private int nodeCnt = 0;
     private static final ArrayList<Float> missingMass = new ArrayList<Float>();
     private static final ArrayList<Integer> sources = new ArrayList<Integer>();
-    
 
     @Override
     public void setup(Context context) throws IOException {
@@ -332,6 +347,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
         throws IOException, InterruptedException {
       ArrayListOfFloatsWritable pageRankList = node.getPageRank();
       int currentNodeID = nid.get();
+
 
       for (int i = 0; i < sources.size(); i++) {
         int sourceID = Integer.valueOf(sources.get(i));
