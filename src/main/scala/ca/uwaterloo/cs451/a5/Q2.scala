@@ -44,7 +44,7 @@ object Q2 {
         .textFile(args.input() + "/orders.tbl")
         .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(6)))
       val lineitem = sc
-        .textFile(args.input() + "lineitem.tbl")
+        .textFile(args.input() + "/lineitem.tbl")
         .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(10)))
         .filter(_._2.contains(date))
         .cogroup(orders)
