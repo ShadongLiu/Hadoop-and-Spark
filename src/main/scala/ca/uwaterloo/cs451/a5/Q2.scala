@@ -48,7 +48,7 @@ object Q2 {
         .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(10)))
         .filter(_._2.contains(date))
         .cogroup(orders)
-        .filter(_._2.size != 0)
+        .filter(_._2._1.size != 0)
         .sortByKey()
         .take(20)
         .map(p => (p._2._2.head, p._1.toLong))
@@ -61,13 +61,12 @@ object Q2 {
       val ordersRDD = ordersDF.rdd
       val orders = ordersRDD
       .map(line => (line.getInt(0), line.getString(6)))
-      val sparkSession = SparkSession.builder.getOrCreate
       val lineitemDF =
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
         .map(line => (line.getInt(0), line.getString(10)))
-        .filter(_.contains(date))
+        .filter(_._2.contains(date))
         .cogroup(orders)
         .filter(_._2.size != 0)
         .sortByKey()
