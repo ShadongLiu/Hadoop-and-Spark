@@ -68,7 +68,7 @@ object Q2 {
         .map(line => (line.getInt(0), line.getString(10)))
         .filter(_._2.contains(date))
         .cogroup(orders)
-        .filter(_._2.size != 0)
+        .filter(_._2._1.size != 0)
         .sortByKey()
         .take(20)
         .map(p => (p._2._2.head, p._1.toLong))
