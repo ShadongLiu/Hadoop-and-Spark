@@ -25,14 +25,6 @@ import org.rogach.scallop._
 import org.apache.spark.Partitioner
 import org.apache.spark.sql.SparkSession
 
-class Conf(args: Seq[String]) extends ScallopConf(args) {
-  mainOptions = Seq(input, date, text, parquet)
-  val input = opt[String](descr = "input path", required = true)
-  val date = opt[String](descr = "date", required = false)
-  val text = opt[Boolean](descr = "text", required = false)
-  val parquet = opt[Boolean](descr = "parquet", required = false)
-  verify()
-}
 
 object Q2 {
   val log = Logger.getLogger(getClass().getName())
