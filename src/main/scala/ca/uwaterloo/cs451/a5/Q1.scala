@@ -38,7 +38,7 @@ object Q1 {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
-    val args = new StripesConf(argv)
+    val args = new Conf(argv)
 
     log.info("Input: " + args.input())
     log.info("Date: " + args.date())
