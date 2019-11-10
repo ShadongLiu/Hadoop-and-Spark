@@ -73,32 +73,30 @@ object Q4 {
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => (line.split("\\|")(0).toInt, 1))
         .reduceByKey(_ + _)
-      println(lineitem)
 
       val output = lineitem
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
         .flatMap(p => {
-          println(lineitem)
           var list = MutableList[((Int, String), Int)]()
           val nationKey = cBroadcast.value(p._2._2.head)
           val nationName = nBroadcast.value(nationKey)
           val count = p._2._1.iterator
           while (count.hasNext) {
             list += (((nationKey, nationName), count.next()))
-            println(list)
+            //println(list)
           }
           list
-          //print(list)
         })
         //key now is (nationKey, nationName)
         .reduceByKey(_ + _)
         //prepare to sort by nationKey
-        .map(p => (p._1._1, (p._1._2, p._2)))
-        .sortByKey()
+        //.map(p => (p._1._1, (p._1._2, p._2)))
+        .sortBy(_._1)
         .collect()
-        .foreach(p => println(p._1, p._2._1, p._2._2))
+        //.foreach(p => println(p._1, p._2._1, p._2._2))
+        .foreach(p => println(p._1._1, p._1._2, p._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
       val ordersDF =
