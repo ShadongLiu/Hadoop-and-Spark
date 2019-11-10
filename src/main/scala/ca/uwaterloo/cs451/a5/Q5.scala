@@ -76,7 +76,7 @@ object Q5 {
           list
         })
         .reduceByKey(_ + _)
-        .sortByKey(_._1)
+        .sortBy(_._1)
         .collect()
         .foreach(p => println(p._1._1, p._1._2, p._2))
     } else if (args.parquet()) {
@@ -129,7 +129,7 @@ object Q5 {
         list
       })
       .reduceByKey(_ + _)
-      .sortByKey(_._1)
+      .sortBy(_._1)
       .collect()
       .foreach(p => println(p._1._1, p._1._2, p._2))
     }
