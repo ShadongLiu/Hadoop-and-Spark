@@ -32,11 +32,11 @@ object Q5 {
     val args = new Conf(argv)
 
     log.info("Input: " + args.input())
-    log.info("Date: " + args.date())
+    
 
     val conf = new SparkConf().setAppName("Q5")
     val sc = new SparkContext(conf)
-    val date = args.date()
+    
 
     if (args.text()) {
       val orders = sc
