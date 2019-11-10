@@ -46,7 +46,7 @@ object Q7 {
       val cBroadcast = sc.broadcast(customer)
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
-        .map(line => {
+        .filter(line => {
           val custKey = line.split("\\|")(1).toInt
           (line.split("\\|")(4) < date) && (cBroadcast.value.contains(custKey))
         })
@@ -99,7 +99,7 @@ object Q7 {
         sparkSession.read.parquet(args.input() + "/orders")
       val ordersRDD = ordersDF.rdd
       val orders = ordersRDD
-        .map(line => {
+        .filter(line => {
           val custKey = line.getInt(1)
           (line.getString(4) < date) && (cBroadcast.value.contains(custKey))
         })
