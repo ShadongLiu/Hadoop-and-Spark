@@ -47,8 +47,8 @@ object Q4 {
           //(orderKey, custKey)
           (element(0).toInt, element(1).toInt)
         })
-     
-        val customer = sc
+
+      val customer = sc
         .textFile(args.input() + "/customer.tbl")
         .map(line => {
           val element = line.split("\\|")
@@ -57,7 +57,7 @@ object Q4 {
         })
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
-     
+
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
         .map(line => {
@@ -67,17 +67,17 @@ object Q4 {
         })
         .collectAsMap()
       val nBroadcast = sc.broadcast(nation)
-      
+
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => (line.split("\\|")(0).toInt, 1))
-        .reduceByKey(_+_)
-        println(lineitem)
+        .reduceByKey(_ + _)
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
         .flatMap(p => {
+          println(lineitem)
           var list = MutableList[((Int, String), Int)]()
           val nationKey = cBroadcast.value(p._2._2.head)
           val nationName = nBroadcast.value(nationKey)
@@ -86,9 +86,10 @@ object Q4 {
             list += (((nationKey, nationName), count.next()))
           }
           list
+          prtinln(list)
         })
         //key now is (nationKey, nationName)
-        .reduceByKey(_+_)
+        .reduceByKey(_ + _)
         //prepare to sort by nationKey
         .map(p => (p._1._1, (p._1._2, p._2)))
         .sortByKey()
@@ -100,8 +101,8 @@ object Q4 {
         sparkSession.read.parquet(args.input() + "/orders")
       val ordersRDD = ordersDF.rdd
       val orders = ordersRDD
-      .map(line => (line.getInt(0), line.getInt(1)))
-      
+        .map(line => (line.getInt(0), line.getInt(1)))
+
       val customerDF =
         sparkSession.read.parquet(args.input() + "/customer")
       val customerRDD = customerDF.rdd
@@ -124,7 +125,7 @@ object Q4 {
       val lineitem = lineitemRDD
         .filter(line => line.getString(10).contains(date))
         .map(line => (line.getInt(0), 1))
-        .reduceByKey(_+_)
+        .reduceByKey(_ + _)
         .cogroup(orders)
         .filter(_._2._1.nonEmpty)
         .flatMap(p => {
@@ -137,7 +138,7 @@ object Q4 {
           }
           list
         })
-        .reduceByKey(_+_)
+        .reduceByKey(_ + _)
         .map(p => (p._1._1, (p._1._2, p._2)))
         .sortByKey()
         .collect()
