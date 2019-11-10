@@ -45,26 +45,29 @@ object Q1 {
 
     val conf = new SparkConf().setAppName("Q1")
     val sc = new SparkContext(conf)
-    val date = args.date()
+    val shipDate = args.date()
 
     if (args.text()) {
       val textFile = sc.textFile(args.input() + "/lineitem.tbl")
       val count = textFile
-        .map(line => line.split("\\|")(10))
-        .filter(_.contains(date))
-        .count
+        .foreach(line => {
+          if (line.split("\\|")(10).contains(shipDate)) {
+            count += 1
+          }
+        })
       println("ANSWER=" + count)
     } else if (args.parquet()) {
-                 val sparkSession = SparkSession.builder.getOrCreate
-
-                 val lineitemDF =
-                   sparkSession.read.parquet(args.input() + "/lineitem")
-                 val lineitemRDD = lineitemDF.rdd
-                 val count = lineitemRDD
-                   .map(line => line.getString(10))
-                   .filter(_.contains(date))
-                   .count
-                 println("ANSWER=" + count)
-               }
+      val sparkSession = SparkSession.builder.getOrCreate
+      val lineitemDF =
+        sparkSession.read.parquet(args.input() + "/lineitem")
+      val lineitemRDD = lineitemDF.rdd
+      val count = lineitemRDD
+      .foreach(line => {
+        if (line.getString(10) == shipDate) {
+          count += 1
+        }
+      })
+      println("ANSWER=" + count)
+    }
   }
 }
