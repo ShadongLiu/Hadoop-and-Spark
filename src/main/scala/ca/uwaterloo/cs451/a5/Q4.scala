@@ -73,6 +73,7 @@ object Q4 {
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => (line.split("\\|")(0).toInt, 1))
         .reduceByKey(_+_)
+        println(lineitem)
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
@@ -82,7 +83,6 @@ object Q4 {
           val nationName = nBroadcast.value(nationKey)
           val count = p._2._1.iterator
           while (count.hasNext) {
-            println(count.next())
             list += (((nationKey, nationName), count.next()))
           }
           list
