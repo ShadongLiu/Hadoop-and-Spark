@@ -88,10 +88,9 @@ object Q3 {
       val lineitem = lineitemRDD
         .filter(line => line.getString(10).contains(date))
         .map(line => {
-          val lines = line.split("\\|")
-          val orderKey = lines(0).toInt
-          val partKey = lines(1).toInt
-          val suppKey = lines(2).toInt
+          val orderKey = line.getInt(0)
+          val partKey = line.getInt(1)
+          val suppKey = line.getInt(2)
           val pArray = pBroadcast.value
           val sArray = sBroadcast.value
           (orderKey, (pArray(partKey), sArray(suppKey)))
