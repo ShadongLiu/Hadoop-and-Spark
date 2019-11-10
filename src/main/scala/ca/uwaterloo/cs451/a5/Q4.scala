@@ -87,9 +87,10 @@ object Q4 {
           val count = p._2._1.iterator
           while (count.hasNext) {
             list += (((nationKey, nationName), count.next()))
+            println(list)
           }
           list
-          print(list)
+          //print(list)
         })
         //key now is (nationKey, nationName)
         .reduceByKey(_ + _)
