@@ -41,14 +41,22 @@ object Q3 {
     if (args.text()) {
       val part = sc
         .textFile(args.input() + "/part.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1)))
+        .map(line => {
+          val element = line.split("\\|")
+          (element(0).toInt, element(1))
+        })
         .collectAsMap()
       val pBroadcast = sc.broadcast(part)
+
       val supplier = sc
         .textFile(args.input() + "/supplier.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1)))
+        .map(line => {
+          val element = line.split("\\|")
+          (element(0).toInt, element(1))
+        })
         .collectAsMap()
       val sBroadcast = sc.broadcast(supplier)
+
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
         .filter(line => line.split("\\|")(10).contains(date))
@@ -57,9 +65,7 @@ object Q3 {
           val orderKey = lines(0).toInt
           val partKey = lines(1).toInt
           val suppKey = lines(2).toInt
-          val pArray = pBroadcast.value
-          val sArray = sBroadcast.value
-          (orderKey, (pArray(partKey), sArray(suppKey)))
+          (orderKey, (pBroadcast.value(partKey), sBroadcast.value(suppKey)))
         })
         .sortByKey()
         .take(20)
@@ -70,30 +76,32 @@ object Q3 {
         sparkSession.read.parquet(args.input() + "/part")
       val partRDD = partDF.rdd
       val part = partRDD
-        .map(line => (line.getInt(0), line.getString(1)))
-        .collectAsMap
+        .map(line => {
+          (line.getInt(0), line.getInt(1))
+        })
+        .collectAsMap()
       val pBroadcast = sc.broadcast(part)
 
       val supplierDF =
         sparkSession.read.parquet(args.input() + "/supplier")
       val supplierRDD = supplierDF.rdd
       val supplier = supplierRDD
-        .map(line => (line.getInt(0), line.getString(1)))
-        .collectAsMap
+        .map(line => {
+          (line.getInt(0), line.getInt(1))
+        })
+        .collectAsMap()
       val sBroadcast = sc.broadcast(supplier)
 
       val lineitemDF =
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
-        .filter(line => line.getString(10).contains(date))
+        .filter(line => line(10).contains(date))
         .map(line => {
           val orderKey = line.getInt(0)
           val partKey = line.getInt(1)
           val suppKey = line.getInt(2)
-          val pArray = pBroadcast.value
-          val sArray = sBroadcast.value
-          (orderKey, (pArray(partKey), sArray(suppKey)))
+          (orderKey, (pBroadcast.value(partKey), sBroadcast.value(suppKey)))
         })
         .sortByKey()
         .take(20)
