@@ -75,7 +75,7 @@ object Q4 {
         .reduceByKey(_+_)
         .cogroup(orders)
         //(orderKey, (count, custKey))
-        .filter(_._2._1.size.nonEmpty)
+        .filter(_._2._1.nonEmpty)
         .flatMap(p => {
           var list = MutableList[((Int, String), Int)]()
           val nationKey = cBroadcast.value(p._2._2.head)
