@@ -96,7 +96,7 @@ object Q3 {
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
-        .filter(line => line(10).contains(date))
+        .filter(line => line.getString(10).contains(date))
         .map(line => {
           val orderKey = line.getInt(0)
           val partKey = line.getInt(1)
