@@ -65,6 +65,7 @@ object Q3 {
           val orderKey = lines(0).toInt
           val partKey = lines(1).toInt
           val suppKey = lines(2).toInt
+          //hash join with broadcast variables
           (orderKey, (pBroadcast.value(partKey), sBroadcast.value(suppKey)))
         })
         .sortByKey()

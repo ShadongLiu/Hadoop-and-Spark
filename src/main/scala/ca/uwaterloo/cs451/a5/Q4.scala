@@ -24,6 +24,7 @@ import org.apache.spark.SparkConf
 import org.rogach.scallop._
 import org.apache.spark.Partitioner
 import org.apache.spark.sql.SparkSession
+import scala.collection.mutable.MutableList
 
 object Q4 {
   val log = Logger.getLogger(getClass().getName())
@@ -41,35 +42,54 @@ object Q4 {
     if (args.text()) {
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1).toInt))
-      val customer = sc
+        .map(line => {
+          val element = line.split("\\|")
+          //(orderKey, custKey)
+          (element(0).toInt, element(1).toInt)
+        })
+     
+        val customer = sc
         .textFile(args.input() + "/customer.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(3).toInt))
+        .map(line => {
+          val element = line.split("\\|")
+          //(custKey, nationKey)
+          (element(0).toInt, element(3).toInt)
+        })
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
+     
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1)))
+        .map(line => {
+          val element = line.split("\\|")
+          //(nationKey, nationName)
+          (element(0).toInt, element(1))
+        })
         .collectAsMap()
       val nBroadcast = sc.broadcast(nation)
+      
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => (line.split("\\|")(0).toInt, 1))
         .reduceByKey(_+_)
         .cogroup(orders)
-        .filter(_._2._1.size != 0)
+        //(orderKey, (count, custKey))
+        .filter(_._2._1.size.nonEmpty)
         .flatMap(p => {
-          var list = scala.collection.mutable.ListBuffer[((Int, String), Int)]()
+          var list = MutableList[((Int, String), Int)]()
           val nationKey = cBroadcast.value(p._2._2.head)
           val nationName = nBroadcast.value(nationKey)
           val count = p._2._1.iterator
+          println(count)
           while (count.hasNext) {
             list += (((nationKey, nationName), count.next()))
           }
           list
         })
+        //key now is (nationKey, nationName)
         .reduceByKey(_+_)
+        //prepare to sort by nationKey
         .map(p => (p._1._1, (p._1._2, p._2)))
         .sortByKey()
         .collect()
@@ -106,9 +126,9 @@ object Q4 {
         .map(line => (line.getInt(0), 1))
         .reduceByKey(_+_)
         .cogroup(orders)
-        .filter(_._2._1.size != 0)
+        .filter(_._2._1.nonEmpty)
         .flatMap(p => {
-          var list = scala.collection.mutable.ListBuffer[((Int, String), Int)]()
+          var list = MutableList[((Int, String), Int)]()
           val nationKey = cBroadcast.value(p._2._2.head)
           val nationName = nBroadcast.value(nationKey)
           val count = p._2._1.iterator

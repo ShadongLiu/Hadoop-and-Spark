@@ -54,6 +54,7 @@ object Q2 {
           val element = line.split("\\|")
           (element(0).toInt, element(10))
         })
+        //reduce-side join, using cogroup transformation
         .cogroup(orders)
         .filter(_._2._1.nonEmpty)
         .sortByKey()
