@@ -81,8 +81,8 @@ object Q4 {
           val nationKey = cBroadcast.value(p._2._2.head)
           val nationName = nBroadcast.value(nationKey)
           val count = p._2._1.iterator
-          println(count)
           while (count.hasNext) {
+            println(count.next())
             list += (((nationKey, nationName), count.next()))
           }
           list
