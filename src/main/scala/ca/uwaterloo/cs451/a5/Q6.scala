@@ -47,7 +47,7 @@ object Q6 {
           val element = line.split("\\|")
           val returnFlag = element(8)
           val lineStatus = element(9)
-          val quantity = element(4).toLong
+          val quantity = element(4).toDouble
           val extendedPrice = element(5).toDouble
           val discount = element(6).toDouble
           val tax = element(7).toDouble
@@ -59,7 +59,7 @@ object Q6 {
         .collect()
         .foreach(p => {
           val count = p._2._6
-          println(p._1._1, p._1._2, p._2._1, p._2._2, p._2._3, p._2._4, p._2._1/count, p._2._2/count, p._2._5/count)
+          println(p._1._1, p._1._2, p._2._1, p._2._2, p._2._3, p._2._4, p._2._1/count, p._2._2/count, p._2._5/count, count)
         })
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
@@ -71,7 +71,7 @@ object Q6 {
         .map(line => {
           val returnFlag = line.getString(8)
           val lineStatus = line.getString(9)
-          val quantity = line.getDouble(4).toInt
+          val quantity = line.getDouble(4)
           val extendedPrice = line.getDouble(5)
           val discount = line.getDouble(6)
           val tax = line.getDouble(7)
@@ -83,7 +83,7 @@ object Q6 {
         .collect()
         .foreach(p => {
           val count = p._2._6
-          println(p._1._1, p._1._2, p._2._1, p._2._2, p._2._3, p._2._4, p._2._1/count, p._2._2/count, p._2._5/count)
+          println(p._1._1, p._1._2, p._2._1, p._2._2, p._2._3, p._2._4, p._2._1/count, p._2._2/count, p._2._5/count, count)
         })
     }
   }
