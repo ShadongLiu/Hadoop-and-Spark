@@ -77,7 +77,7 @@ object Q3 {
       val partRDD = partDF.rdd
       val part = partRDD
         .map(line => {
-          (line.getInt(0), line.getInt(1))
+          (line.getInt(0), line.getString(1))
         })
         .collectAsMap()
       val pBroadcast = sc.broadcast(part)
