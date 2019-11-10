@@ -84,7 +84,7 @@ object Q2 {
         .filter(_._2._1.nonEmpty)
         .sortByKey()
         .take(20)
-        .map(p => (p._2._2, p._1))
+        .map(p => (p._2._2.head, p._1))
         .foreach(println)
     }
   }
