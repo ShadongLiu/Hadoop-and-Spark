@@ -87,7 +87,7 @@ object Q3 {
       val supplierRDD = supplierDF.rdd
       val supplier = supplierRDD
         .map(line => {
-          (line.getInt(0), line.getInt(1))
+          (line.getInt(0), line.getString(1))
         })
         .collectAsMap()
       val sBroadcast = sc.broadcast(supplier)
