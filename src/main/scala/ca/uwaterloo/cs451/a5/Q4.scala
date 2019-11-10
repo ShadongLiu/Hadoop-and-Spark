@@ -89,7 +89,7 @@ object Q4 {
             list += (((nationKey, nationName), count.next()))
           }
           list
-          prtinln(list)
+          println(list)
         })
         //key now is (nationKey, nationName)
         .reduceByKey(_ + _)
