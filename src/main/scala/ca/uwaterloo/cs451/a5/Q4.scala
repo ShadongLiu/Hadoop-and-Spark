@@ -73,6 +73,9 @@ object Q4 {
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => (line.split("\\|")(0).toInt, 1))
         .reduceByKey(_ + _)
+      println(lineitem)
+
+      val output = lineitem
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
