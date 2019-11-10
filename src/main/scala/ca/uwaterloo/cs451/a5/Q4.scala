@@ -55,7 +55,7 @@ object Q4 {
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
         .filter(line => line.split("\\|")(10).contains(date))
-        .map(line => line.split("\\|")(0).toInt, 1)
+        .map(line => (line.split("\\|")(0).toInt, 1))
         .reduceByKey(_+_)
         .cogroup(orders)
         .filter(_._2._1.size != 0)
