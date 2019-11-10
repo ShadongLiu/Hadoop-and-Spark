@@ -141,10 +141,9 @@ object Q4 {
           list
         })
         .reduceByKey(_ + _)
-        .map(p => (p._1._1, (p._1._2, p._2)))
-        .sortByKey()
+        .sortBy(_._1)
         .collect()
-        .foreach(p => println(p._1, p._2._1, p._2._2))
+        .foreach(p => println(p._1._1, p._1._2, p._2))
     }
   }
 }
