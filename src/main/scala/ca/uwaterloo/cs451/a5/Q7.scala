@@ -55,13 +55,13 @@ object Q7 {
         .map(line => {
           val element = line.split("\\|")
           val l_orderKey = element(0).toInt
-          val extendedPrice = element(5).toDouble
-          val discount = element(6).toDouble
-          val revenue = extendedPrice * (1 - discount)
+          val l_extendedPrice = element(5).toDouble
+          val l_discount = element(6).toDouble
+          val revenue = l_extendedPrice * (1 - l_discount)
           (l_orderKey, revenue)
         })
         .reduceByKey(_ + _)
-      
+
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
         .filter(line => {
@@ -77,14 +77,14 @@ object Q7 {
           (o_orderKey, (custName, o_orderDate, o_shipPriority))
         })
         .cogroup(lineitem)
-        .filter(p => p._2._1.size != 0 && p._2._2.size != 0)
+        .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
         .map(p => {
           val cName = p._2._1.head._1
           val orderKey = p._1
           val revenue = p._2._2.head
-          val orderDate = p._2._1.head._2
-          val shipPriority = p._2._1.head._3
-          (revenue, (cName, orderKey, revenue, orderDate, shipPriority))
+          val o_orderDate = p._2._1.head._2
+          val o_shipPriority = p._2._1.head._3
+          (revenue, (cName, orderKey, revenue, o_orderDate, o_shipPriority))
         })
         .sortByKey(false)
         .collect()
@@ -101,43 +101,44 @@ object Q7 {
         .collectAsMap
       val cBroadcast = sc.broadcast(customer)
 
-      val ordersDF =
-        sparkSession.read.parquet(args.input() + "/orders")
-      val ordersRDD = ordersDF.rdd
-      val orders = ordersRDD
-        .filter(line => {
-          val custKey = line.getInt(1)
-          (line.getString(4) < date) && (cBroadcast.value.contains(custKey))
-        })
-        .map(line => {
-          val orderKey = line.getInt(0)
-          val custName = cBroadcast.value(line.getInt(1))
-          val orderDate = line.getString(4)
-          val shipPriority = line.getInt(0)
-          (orderKey, (custName, orderDate, shipPriority))
-        })
-
       val lineitemDF =
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
         .filter(line => line.getString(10) > date)
         .map(line => {
-          val extendedPrice = line.getDouble(5)
-          val discount = line.getDouble(6)
-          val revenue = extendedPrice * (1 - discount)
-          (line.getInt(0), revenue)
+          val l_orderKey = line.getInt(0)
+          val l_extendedPrice = line.getDouble(5)
+          val l_discount = line.getDouble(6)
+          val revenue = l_extendedPrice * (1 - l_discount)
+          (l_orderKey, revenue)
         })
         .reduceByKey(_ + _)
-        .cogroup(orders)
-        .filter(p => p._2._1.size != 0 && p._2._2.size != 0)
+
+      val ordersDF =
+        sparkSession.read.parquet(args.input() + "/orders")
+      val ordersRDD = ordersDF.rdd
+      val orders = ordersRDD
+        .filter(line => {
+          val custKey = line.getInt(1)
+          (cBroadcast.value.contains(custKey)) && (line.getString(4) < date)
+        })
+        .map(line => {
+          val o_orderKey = line.getInt(0)
+          val custName = cBroadcast.value(line.getInt(1))
+          val o_orderDate = line.getString(4)
+          val o_shipPriority = line.getInt(0)
+          (o_orderKey, (custName, o_orderDate, o_shipPriority))
+        })
+        .cogroup(lineitem)
+        .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
         .map(p => {
-          val cName = p._2._2.head._1
+          val cName = p._2._1.head._1
           val orderKey = p._1
-          val revenue = p._2._1.head
-          val orderDate = p._2._2.head._2
-          val shipPriority = p._2._2.head._3
-          (revenue, (cName, orderKey, revenue, orderDate, shipPriority))
+          val revenue = p._2._2.head
+          val o_orderDate = p._2._1.head._2
+          val o_shipPriority = p._2._1.head._3
+          (revenue, (cName, orderKey, revenue, o_orderDate, o_shipPriority))
         })
         .sortByKey(false)
         .collect()
