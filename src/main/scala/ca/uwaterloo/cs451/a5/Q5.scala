@@ -78,7 +78,7 @@ object Q5 {
         })
         .cogroup(orders)
         .filter(_._2._1.nonEmpty)
-        .filter(c => c._2._2.iterator.hasNext)
+        .filter(c => c._2._2._1iterator.hasNext)
         .flatMap(c => {
           val nationKey = c._2._2._1
           val nationName = c._2._2._2
