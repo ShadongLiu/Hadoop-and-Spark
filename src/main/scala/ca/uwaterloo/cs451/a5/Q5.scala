@@ -37,14 +37,6 @@ object Q5 {
     val sc = new SparkContext(conf)
 
     if (args.text()) {
-      val orders = sc
-        .textFile(args.input() + "/orders.tbl")
-        .map(line => {
-          val element = line.split("\\|")
-          //(orderKey, custKey)
-          (element(0).toInt, element(1).toInt)
-        })
-
       val customer = sc
         .textFile(args.input() + "/customer.tbl")
         .map(line => {
@@ -55,6 +47,15 @@ object Q5 {
         .filter(p => (p._2 == 3 || p._2 == 24))
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
+
+      val orders = sc
+        .textFile(args.input() + "/orders.tbl")
+        .map(line => {
+          val element = line.split("\\|")
+          val nationKey = cBroadcast.value(element(1))
+          //(orderKey, custKey)
+          (element(0).toInt, nationKey)
+        })
 
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
@@ -76,7 +77,11 @@ object Q5 {
         })
         .cogroup(orders)
         .filter(_._2._1.nonEmpty)
+        .filter(c => c._2._2.iterator.hasNext)
         .flatMap(c => {
+          val nationKey = c._2._2
+          val nationName = nBroadcast(nationKey)
+          c._2._1.map(date => ((nationKey, nationName, date), 1))
           // var list =
           //   scala.collection.mutable.ListBuffer[((String, String), Int)]()
           // if (cBroadcast.value.contains(c._2._2.head)) {
@@ -88,18 +93,11 @@ object Q5 {
           //   }
           // }
           // list
-          c._2._1
-            .map(cs => {
-              val nationKey = cBroadcast.value(c._2._2.head)
-              val nationName = nBroadcast.value(nationKey)
-              ((nationKey, nationName), 1)
-            })
-            .toList
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(c => println(c._1._1, c._1._2, c._2))
+        .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
       val ordersDF =
