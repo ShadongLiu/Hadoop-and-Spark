@@ -82,7 +82,7 @@ object Q4 {
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
-        .flatMap(s => {
+        .map(s => {
           var count = 0
           val dateIter = s._2._1.iterator
           while (dateIter.hasNext) {
