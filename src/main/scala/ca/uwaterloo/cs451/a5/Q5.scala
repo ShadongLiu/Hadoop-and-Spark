@@ -53,8 +53,9 @@ object Q5 {
         .map(line => {
           val element = line.split("\\|")
           val nationKey = cBroadcast.value(element(1).toInt)
+          val nationName = nBroadcast.value(nationKey)
           //(orderKey, custKey)
-          (element(0).toInt, nationKey)
+          (element(0).toInt, (nationKey, nationName))
         })
 
       val nation = sc
@@ -79,8 +80,8 @@ object Q5 {
         .filter(_._2._1.nonEmpty)
         .filter(c => c._2._2.iterator.hasNext)
         .flatMap(c => {
-          val nationKey = c._2._2
-          val nationName = nBroadcast.value(nationKey)
+          val nationKey = c._2._2._1
+          val nationName = c._2._2._2
           c._2._1.map(date => ((nationKey, nationName, date), 1))
           // var list =
           //   scala.collection.mutable.ListBuffer[((String, String), Int)]()
