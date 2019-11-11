@@ -77,8 +77,6 @@ object Q4 {
           val element = line.split("\\|")
           (element(0).toInt, element(10))
         })
-
-      val output = lineitem
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
@@ -86,7 +84,6 @@ object Q4 {
           var count = 0
           val dateIter = s._2._1.iterator
           while (dateIter.hasNext) {
-            //list += (((nationKey, nationName), dateIter.next()))
             dateIter.next()
             count += 1
           }
@@ -97,13 +94,9 @@ object Q4 {
           val nationName = nBroadcast.value(nationKey)
           ((nationKey, nationName), s._3)
         })
-        //key now is (nationKey, nationName)
         .reduceByKey(_ + _)
-        //prepare to sort by nationKey
-        //.map(p => (p._1._1, (p._1._2, p._2)))
         .sortBy(_._1)
         .collect()
-        //.foreach(p => println(p._1, p._2._1, p._2._2))
         .foreach(s => println(s._1._1, s._1._2, s._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
@@ -133,25 +126,33 @@ object Q4 {
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
-        .filter(line => line.getString(10).contains(date))
-        .map(line => (line.getInt(0), 1))
-        .reduceByKey(_ + _)
+        .filter(line => {
+          line.getString(10).contains(date)
+        })
+        .map(line => {
+          (line.getInt(0), line.getString(10))
+        })
         .cogroup(orders)
+        //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
-        .flatMap(p => {
-          var list = MutableList[((Int, String), Int)]()
-          val nationKey = cBroadcast.value(p._2._2.head)
-          val nationName = nBroadcast.value(nationKey)
-          val count = p._2._1.iterator
-          while (count.hasNext) {
-            list += (((nationKey, nationName), count.next()))
+        .map(s => {
+          var count = 0
+          val dateIter = s._2._1.iterator
+          while (dateIter.hasNext) {
+            dateIter.next()
+            count += 1
           }
-          list
+          (s._1, s._2._2.head, count)
+        })
+        .map(s => {
+          val nationKey = cBroadcast.value(s._2)
+          val nationName = nBroadcast.value(nationKey)
+          ((nationKey, nationName), s._3)
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(p => println(p._1._1, p._1._2, p._2))
+        .foreach(s => println(s._1._1, s._1._2, s._2))
     }
   }
 }
