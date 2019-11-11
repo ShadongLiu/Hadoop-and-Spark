@@ -41,43 +41,49 @@ object Q7 {
     if (args.text()) {
       val customer = sc
         .textFile(args.input() + "/customer.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1)))
-        .collectAsMap()
-      val cBroadcast = sc.broadcast(customer)
-      val orders = sc
-        .textFile(args.input() + "/orders.tbl")
-        .filter(line => {
-          val custKey = line.split("\\|")(1).toInt
-          (line.split("\\|")(4) < date) && (cBroadcast.value.contains(custKey))
-        })
         .map(line => {
           val element = line.split("\\|")
-          val orderKey = element(0).toInt
-          val custName = cBroadcast.value(element(1).toInt)
-          val orderDate = element(4)
-          val shipPriority = element(7)
-          (orderKey, (custName, orderDate, shipPriority))
+          //(custKey, custName)
+          (element(0).toInt, element(1))
         })
+        .collectAsMap()
+      val cBroadcast = sc.broadcast(customer)
 
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
         .filter(line => line.split("\\|")(10) > date)
         .map(line => {
           val element = line.split("\\|")
+          val l_orderKey = element(0).toInt
           val extendedPrice = element(5).toDouble
           val discount = element(6).toDouble
           val revenue = extendedPrice * (1 - discount)
-          (element(0).toInt, revenue)
+          (l_orderKey, revenue)
         })
         .reduceByKey(_ + _)
-        .cogroup(orders)
+      
+      val orders = sc
+        .textFile(args.input() + "/orders.tbl")
+        .filter(line => {
+          val custKey = line.split("\\|")(1).toInt
+          (cBroadcast.value.contains(custKey)) && (line.split("\\|")(4) < date)
+        })
+        .map(line => {
+          val element = line.split("\\|")
+          val o_orderKey = element(0).toInt
+          val custName = cBroadcast.value(element(1).toInt)
+          val o_orderDate = element(4)
+          val o_shipPriority = element(7)
+          (o_orderKey, (custName, o_orderDate, o_shipPriority))
+        })
+        .cogroup(lineitem)
         .filter(p => p._2._1.size != 0 && p._2._2.size != 0)
         .map(p => {
-          val cName = p._2._2.head._1
+          val cName = p._2._1.head._1
           val orderKey = p._1
-          val revenue = p._2._1.head
-          val orderDate = p._2._2.head._2
-          val shipPriority = p._2._2.head._3
+          val revenue = p._2._2.head
+          val orderDate = p._2._1.head._2
+          val shipPriority = p._2._1.head._3
           (revenue, (cName, orderKey, revenue, orderDate, shipPriority))
         })
         .sortByKey(false)
