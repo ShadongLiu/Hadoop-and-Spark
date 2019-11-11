@@ -127,7 +127,7 @@ object Q7 {
           val o_orderKey = line.getInt(0)
           val custName = cBroadcast.value(line.getInt(1))
           val o_orderDate = line.getString(4)
-          val o_shipPriority = line.getInt(0)
+          val o_shipPriority = line.getInt(7)
           (o_orderKey, (custName, o_orderDate, o_shipPriority))
         })
         .cogroup(lineitem)
