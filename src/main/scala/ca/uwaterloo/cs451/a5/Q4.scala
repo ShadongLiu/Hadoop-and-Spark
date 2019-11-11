@@ -70,24 +70,32 @@ object Q4 {
 
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
-        .filter(line => line.split("\\|")(10).contains(date))
-        .map(line => (line.split("\\|")(0).toInt, 1))
-        .reduceByKey(_ + _)
+        .filter(line => {
+          line.split("\\|")(10).contains(date)
+        })
+        .map(line => {
+          val element = line.split("\\|")
+          (element(0).toInt, element(10))
+        })
 
       val output = lineitem
         .cogroup(orders)
         //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
-        .flatMap(p => {
-          var list = MutableList[((Int, String), Int)]()
-          val nationKey = cBroadcast.value(p._2._2.head)
-          val nationName = nBroadcast.value(nationKey)
-          val count = p._2._1.iterator
-          while (count.hasNext) {
-            list += (((nationKey, nationName), count.next()))
-            //println(list)
+        .flatMap(s => {
+          var count = 0
+          val dateIter = s._2._1.iterator
+          while (dateIter.hasNext) {
+            //list += (((nationKey, nationName), dateIter.next()))
+            dateIter.next()
+            count += 1
           }
-          list
+          (s._1, s._2._2.head, count)
+        })
+        .map(s => {
+          val nationKey = cBroadcast.value(s._2)
+          val nationName = nBroadcast.value(nationKey)
+          ((nationKey, nationName), s._3)
         })
         //key now is (nationKey, nationName)
         .reduceByKey(_ + _)
@@ -96,7 +104,7 @@ object Q4 {
         .sortBy(_._1)
         .collect()
         //.foreach(p => println(p._1, p._2._1, p._2._2))
-        .foreach(p => println(p._1._1, p._1._2, p._2))
+        .foreach(p => println(s._1._1, s._1._2, s._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
       val ordersDF =
