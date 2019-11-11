@@ -83,7 +83,7 @@ object Q5 {
         //(orderKey, (shipdate, custKey)
         //.filter(_._2._1.nonEmpty)
         .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
-        .filter(p => p._2._2.head.iterator.hasNext)
+        .filter(p => p._2._2.iterator.hasNext)
         .flatMap(p => {
           // var list =
           //   MutableList[((Int, String, String), Int)]()
