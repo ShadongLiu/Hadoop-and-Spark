@@ -54,7 +54,6 @@ object Q5 {
         //(custKey, nationKey)
         (element(0).toInt, element(3).toInt)
       })
-      //.filter(p => (p._2 == 3 || p._2 == 24))
       .collectAsMap()
     val cBroadcast = sc.broadcast(customer)
 
@@ -72,8 +71,9 @@ object Q5 {
           (
             element(0).toInt,
             (
-              cBroadcast.value(element(1).toInt),
-              nBroadcast.value(cBroadcast.value(element(1).toInt))
+              // cBroadcast.value(element(1).toInt),
+              // nBroadcast.value(cBroadcast.value(element(1).toInt))
+              nk, nn
             )
           )
         })
@@ -91,21 +91,9 @@ object Q5 {
         .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
         .filter(p => p._2._2.iterator.hasNext)
         .flatMap(p => {
-          // var list =
-          //   MutableList[((Int, String, String), Int)]()
-          // if (cBroadcast.value.contains(c._2._2.head)) {
-          //   val nationKey = cBroadcast.value(c._2._2.head)
-          //   val nationName = nBroadcast.value(nationKey)
-          //   val shipDates = c._2._1.iterator
-          //   while (shipDates.hasNext) {
-          //     list += (((nationKey, nationName, shipDates.next()), 1))
-          //   }
-          // }
-          // list
           val nationKey = p._2._2.head._1
           val nationName = p._2._2.head._2
           p._2._1.map(date => ((nationKey, nationName, date), 1))
-
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)
