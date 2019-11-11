@@ -37,7 +37,6 @@ object Q6 {
     val conf = new SparkConf().setAppName("Q4")
     val sc = new SparkContext(conf)
     val date = args.date()
-    
 
     if (args.text()) {
       val lineitem = sc
@@ -45,21 +44,44 @@ object Q6 {
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => {
           val element = line.split("\\|")
-          val returnFlag = element(8)
-          val lineStatus = element(9)
-          val quantity = element(4).toDouble
-          val extendedPrice = element(5).toDouble
-          val discount = element(6).toDouble
-          val tax = element(7).toDouble
-          val discPrice = extendedPrice * (1 - discount)
-          val charge = extendedPrice * (1 - discount) * (1 + tax)
-          ((returnFlag, lineStatus), (quantity, extendedPrice, discPrice, charge, discount, 1))
+          val l_returnFlag = element(8)
+          val l_lineStatus = element(9)
+          val l_quantity = element(4).toDouble
+          val l_extendedPrice = element(5).toDouble
+          val l_discount = element(6).toDouble
+          val l_tax = element(7).toDouble
+          val discPrice = extendedPrice * (1 - l_discount)
+          val charge = extendedPrice * (1 - l_discount) * (1 + l_tax)
+          (
+            (l_returnFlag, l_lineStatus),
+            (l_quantity, l_extendedPrice, discPrice, charge, l_discount, 1)
+          )
         })
-        .reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
+        .reduceByKey(
+          (x, y) =>
+            (
+              x._1 + y._1,
+              x._2 + y._2,
+              x._3 + y._3,
+              x._4 + y._4,
+              x._5 + y._5,
+              x._6 + y._6
+            )
+        )
         .collect()
-        .foreach(p => {
-          val count = p._2._6
-          println(p._1._1, p._1._2, p._2._1, p._2._2, p._2._3, p._2._4, p._2._1/count, p._2._2/count, p._2._5/count, count)
+        .foreach(ps => {
+          println(
+            ps._1._1,
+            ps._1._2,
+            ps._2._1,
+            ps._2._2,
+            ps._2._3,
+            ps._2._4,
+            ps._2._1 / ps._2._6,
+            ps._2._2 / ps._2._6,
+            ps._2._5 / ps._2._6,
+            ps._2._6
+          )
         })
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
@@ -67,23 +89,46 @@ object Q6 {
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
-      .filter(line => line.getString(10).contains(date))
+        .filter(line => line.getString(10).contains(date))
         .map(line => {
-          val returnFlag = line.getString(8)
-          val lineStatus = line.getString(9)
-          val quantity = line.getDouble(4)
-          val extendedPrice = line.getDouble(5)
-          val discount = line.getDouble(6)
-          val tax = line.getDouble(7)
-          val discPrice = extendedPrice * (1 - discount)
-          val charge = extendedPrice * (1 - discount) * (1 + tax)
-          ((returnFlag, lineStatus), (quantity, extendedPrice, discPrice, charge, discount, 1))
+          val l_returnFlag = line.getString(8)
+          val l_lineStatus = line.getString(9)
+          val l_quantity = line.getDouble(4)
+          val l_extendedPrice = line.getDouble(5)
+          val l_discount = line.getDouble(6)
+          val l_tax = line.getDouble(7)
+          val discPrice = extendedPrice * (1 - l_discount)
+          val charge = extendedPrice * (1 - l_discount) * (1 + l_tax)
+          (
+            (l_returnFlag, l_lineStatus),
+            (l_quantity, l_extendedPrice, discPrice, charge, l_discount, 1)
+          )
         })
-        .reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
+        .reduceByKey(
+          (x, y) =>
+            (
+              x._1 + y._1,
+              x._2 + y._2,
+              x._3 + y._3,
+              x._4 + y._4,
+              x._5 + y._5,
+              x._6 + y._6
+            )
+        )
         .collect()
-        .foreach(p => {
-          val count = p._2._6
-          println(p._1._1, p._1._2, p._2._1, p._2._2, p._2._3, p._2._4, p._2._1/count, p._2._2/count, p._2._5/count, count)
+        .foreach(ps => {
+          println(
+            ps._1._1,
+            ps._1._2,
+            ps._2._1,
+            ps._2._2,
+            ps._2._3,
+            ps._2._4,
+            ps._2._1 / ps._2._6,
+            ps._2._2 / ps._2._6,
+            ps._2._5 / ps._2._6,
+            ps._2._6
+          )
         })
     }
   }
