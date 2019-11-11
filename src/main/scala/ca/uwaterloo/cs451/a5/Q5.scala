@@ -37,6 +37,27 @@ object Q5 {
     val conf = new SparkConf().setAppName("Q5")
     val sc = new SparkContext(conf)
 
+    val nation = sc
+      .textFile(args.input() + "/nation.tbl")
+      .map(line => {
+        val element = line.split("\\|")
+        //(nationKey, nationName)
+        (element(0).toInt, element(1))
+      })
+      .collectAsMap()
+    val nBroadcast = sc.broadcast(nation)
+
+    val customer = sc
+      .textFile(args.input() + "/customer.tbl")
+      .map(line => {
+        val element = line.split("\\|")
+        //(custKey, nationKey)
+        (element(0).toInt, element(3).toInt)
+      })
+      //.filter(p => (p._2 == 3 || p._2 == 24))
+      .collectAsMap()
+    val cBroadcast = sc.broadcast(customer)
+
     if (args.text()) {
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
@@ -48,29 +69,14 @@ object Q5 {
         })
         .map(line => {
           val element = line.split("\\|")
-          (element(0).toInt, (cBroadcast.value(element(1).toInt), nBroadcast.value(cBroadcast.value(element(1).toInt))))
+          (
+            element(0).toInt,
+            (
+              cBroadcast.value(element(1).toInt),
+              nBroadcast.value(cBroadcast.value(element(1).toInt))
+            )
+          )
         })
-
-      val customer = sc
-        .textFile(args.input() + "/customer.tbl")
-        .map(line => {
-          val element = line.split("\\|")
-          //(custKey, nationKey)
-          (element(0).toInt, element(3).toInt)
-        })
-        //.filter(p => (p._2 == 3 || p._2 == 24))
-        .collectAsMap()
-      val cBroadcast = sc.broadcast(customer)
-
-      val nation = sc
-        .textFile(args.input() + "/nation.tbl")
-        .map(line => {
-          val element = line.split("\\|")
-          //(nationKey, nationName)
-          (element(0).toInt, element(1))
-        })
-        .collectAsMap()
-      val nBroadcast = sc.broadcast(nation)
 
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
