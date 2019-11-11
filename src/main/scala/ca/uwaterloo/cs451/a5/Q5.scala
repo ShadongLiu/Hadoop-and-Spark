@@ -38,6 +38,14 @@ object Q5 {
     val sc = new SparkContext(conf)
 
     if (args.text()) {
+      val orders = sc
+        .textFile(args.input() + "/orders.tbl")
+        .map(line => {
+          val element = line.split("\\|")
+          //(orderKey, custKey)
+          (element(0).toInt, element(1).toInt)
+        })
+
       val customer = sc
         .textFile(args.input() + "/customer.tbl")
         .map(line => {
@@ -48,14 +56,6 @@ object Q5 {
         .filter(p => (p._2 == 3 || p._2 == 24))
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
-
-      val orders = sc
-        .textFile(args.input() + "/orders.tbl")
-        .map(line => {
-          val element = line.split("\\|")
-          //(orderKey, custKey)
-          (element(0).toInt, element(1).toInt)
-        })
 
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
@@ -81,7 +81,7 @@ object Q5 {
           var list =
             MutableList[((Int, String, String), Int)]()
           if (cBroadcast.value.contains(c._2._2.head)) {
-            val nationKey = c._2._2.head
+            val nationKey = cBroadcast.value(c._2._2.head)
             val nationName = nBroadcast.value(nationKey)
             val shipDates = c._2._1.iterator
             while (shipDates.hasNext) {
@@ -146,7 +146,7 @@ object Q5 {
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
+        .foreach(p => println(c._1._1, c._1._2, c._2))
     }
   }
 }
