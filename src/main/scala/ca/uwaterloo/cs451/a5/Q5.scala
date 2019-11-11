@@ -63,19 +63,15 @@ object Q5 {
         .filter(line => {
           val element = line.split("\\|")
           val nk = cBroadcast.value(element(1).toInt)
-          val nn = nBroadcast.value(nk)
+          //val nn = nBroadcast.value(nk)
           nk == 3 || nk == 24
         })
         .map(line => {
           val element = line.split("\\|")
-          (
-            element(0).toInt,
-            (
-              // cBroadcast.value(element(1).toInt),
-              // nBroadcast.value(cBroadcast.value(element(1).toInt))
-              nk, nn
-            )
-          )
+          val nk = cBroadcast.value(element(1).toInt)
+          val nn = nBroadcast.value(nk)
+          (element(0).toInt,(nk,nn))
+          
         })
 
       val lineitem = sc
