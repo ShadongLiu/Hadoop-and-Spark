@@ -139,7 +139,7 @@ object Q5 {
         .filter(_._2._1.size != 0)
         .flatMap(c => {
           var list =
-            MutableList[((String, String), Int)]()
+            MutableList[((Int, String, String), Int)]()
           if (cBroadcast.value.contains(c._2._2.head)) {
             val nationKey = cBroadcast.value(c._2._2.head)
             val nationName = nBroadcast.value(nationKey)
