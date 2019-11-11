@@ -45,22 +45,19 @@ object Q5 {
           //(custKey, nationKey)
           (element(0).toInt, element(3).toInt)
         })
-        //.filter(p => (p._2 == 3 || p._2 == 24))
+        .filter(p => (p._2 == 3 || p._2 == 24))
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
-
+      
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
-        .filter(line => {
-          val element = line.split("\\|")
-          val nationKey = cBroadcast.value(element(1).toInt)
-          nationKey == 3 || nationKey == 24
-        })
         .map(line => {
           val element = line.split("\\|")
           //(orderKey, custKey)
           (element(0).toInt, cBroadcast.value(element(1).toInt))
         })
+
+      
 
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
@@ -86,12 +83,10 @@ object Q5 {
           var list =
             MutableList[((Int, String, String), Int)]()
           //if (cBroadcast.value.contains(c._2._2.head)) {
-            //val nationKey = c._2._2.head
-            //val nationName = nBroadcast.value(nationKey)
+            val nationKey = c._2._2.head
+            val nationName = nBroadcast.value(nationKey)
             val shipDates = c._2._1.iterator
             while (shipDates.hasNext) {
-              val nationKey = c._2._2.iterator.next()
-              val nationName = nBroadcast.value(nationKey)
               list += (((nationKey, nationName, shipDates.next()), 1))
             }
           //}
