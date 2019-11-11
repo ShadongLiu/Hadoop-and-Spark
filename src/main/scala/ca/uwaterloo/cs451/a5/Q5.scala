@@ -80,7 +80,7 @@ object Q5 {
         .filter(_._2._1.nonEmpty)
         .flatMap(c => {
           var list =
-            scala.collection.mutable.ListBuffer[((String, String), Int)]()
+            scala.collection.mutable.ListBuffer[((Int, String, String), Int)]()
           if (cBroadcast.value.contains(c._2._2.head)) {
             val nationKey = cBroadcast.value(c._2._2.head)
             val nationName = nBroadcast.value(nationKey)
