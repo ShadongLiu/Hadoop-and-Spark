@@ -52,7 +52,7 @@ object Q5 {
         .textFile(args.input() + "/orders.tbl")
         .map(line => {
           val element = line.split("\\|")
-          val nationKey = cBroadcast.value(element(1))
+          val nationKey = cBroadcast.value(element(1).toInt)
           //(orderKey, custKey)
           (element(0).toInt, nationKey)
         })
@@ -80,7 +80,7 @@ object Q5 {
         .filter(c => c._2._2.iterator.hasNext)
         .flatMap(c => {
           val nationKey = c._2._2
-          val nationName = nBroadcast(nationKey)
+          val nationName = nBroadcast.value(nationKey)
           c._2._1.map(date => ((nationKey, nationName, date), 1))
           // var list =
           //   scala.collection.mutable.ListBuffer[((String, String), Int)]()
