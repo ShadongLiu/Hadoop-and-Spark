@@ -32,53 +32,74 @@ object Q5 {
     val args = new Conf(argv)
 
     log.info("Input: " + args.input())
-    
 
     val conf = new SparkConf().setAppName("Q5")
     val sc = new SparkContext(conf)
-    
 
     if (args.text()) {
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1).toInt))
+        .map(line => {
+          val element = line.split("\\|")
+          //(orderKey, custKey)
+          (element(0).toInt, element(1).toInt)
+        })
+
       val customer = sc
         .textFile(args.input() + "/customer.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(3).toInt))
+        .map(line => {
+          val element = line.split("\\|")
+          //(custKey, nationKey)
+          (element(0).toInt, element(3).toInt)
+        })
         .filter(p => (p._2 == 3 || p._2 == 24))
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
+
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
-        .map(line => (line.split("\\|")(0).toInt, line.split("\\|")(1)))
+        .map(line => {
+          val element = line.split("\\|")
+          //(nationKey, nationName)
+          (element(0).toInt, element(1))
+        })
         .collectAsMap()
       val nBroadcast = sc.broadcast(nation)
+
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
         .map(line => {
-          val orderKey = line.split("\\|")(0).toInt
-          val shipDate = line.split("\\|")(10)
-          (orderKey, shipDate.substring(0, shipDate.lastIndexOf('-')))
+          //val orderKey = line.split("\\|")(0).toInt
+          //val shipDate = line.split("\\|")(10)
+          val element = line.split("\\|")
+          (element(0).toInt, element(10).substring(0, 7))
         })
         .cogroup(orders)
-        .filter(_._2._1.size != 0)
-        .flatMap(p => {
-          var list =
-            scala.collection.mutable.ListBuffer[((String, String), Int)]()
-          if (cBroadcast.value.contains(p._2._2.head)) {
-            val nationKey = cBroadcast.value(p._2._2.head)
-            val nationName = nBroadcast.value(nationKey)
-            val dates = p._2._1.iterator
-            while (dates.hasNext) {
-              list += (((dates.next(), nationName), 1))
-            }
-          }
-          list
+        .filter(_._2._1.nonEmpty)
+        .flatMap(c => {
+          // var list =
+          //   scala.collection.mutable.ListBuffer[((String, String), Int)]()
+          // if (cBroadcast.value.contains(c._2._2.head)) {
+          //   val nationKey = cBroadcast.value(c._2._2.head)
+          //   val nationName = nBroadcast.value(nationKey)
+          //   val dates = c._2._1.iterator
+          //   while (dates.hasNext) {
+          //     list += (((dates.next(), nationName), 1))
+          //   }
+          // }
+          // list
+          c._2._1
+            .map(cs => {
+              val nationKey = cBroadcast.value(c._2._2.head)
+              val nationName = nBroadcast.value(nationKey)
+              ((nationKey, nationName), 1)
+            })
+            .toList
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(p => println(p._1._1, p._1._2, p._2))
+        .foreach(c => println(c._1._1, c._1._2, c._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
       val ordersDF =
@@ -108,30 +129,30 @@ object Q5 {
         sparkSession.read.parquet(args.input() + "/lineitem")
       val lineitemRDD = lineitemDF.rdd
       val lineitem = lineitemRDD
-      .map(line => {
-        val orderKey = line.getInt(0)
-        val shipDate = line.getString(10)
-        (orderKey, shipDate.substring(0, shipDate.lastIndexOf('-')))
-      })
-      .cogroup(orders)
-      .filter(_._2._1.size != 0)
-      .flatMap(p => {
-        var list =
-          scala.collection.mutable.ListBuffer[((String, String), Int)]()
-        if (cBroadcast.value.contains(p._2._2.head)) {
-          val nationKey = cBroadcast.value(p._2._2.head)
-          val nationName = nBroadcast.value(nationKey)
-          val dates = p._2._1.iterator
-          while (dates.hasNext) {
-            list += (((dates.next(), nationName), 1))
+        .map(line => {
+          val orderKey = line.getInt(0)
+          val shipDate = line.getString(10)
+          (orderKey, shipDate.substring(0, shipDate.lastIndexOf('-')))
+        })
+        .cogroup(orders)
+        .filter(_._2._1.size != 0)
+        .flatMap(p => {
+          var list =
+            scala.collection.mutable.ListBuffer[((String, String), Int)]()
+          if (cBroadcast.value.contains(p._2._2.head)) {
+            val nationKey = cBroadcast.value(p._2._2.head)
+            val nationName = nBroadcast.value(nationKey)
+            val dates = p._2._1.iterator
+            while (dates.hasNext) {
+              list += (((dates.next(), nationName), 1))
+            }
           }
-        }
-        list
-      })
-      .reduceByKey(_ + _)
-      .sortBy(_._1)
-      .collect()
-      .foreach(p => println(p._1._1, p._1._2, p._2))
+          list
+        })
+        .reduceByKey(_ + _)
+        .sortBy(_._1)
+        .collect()
+        .foreach(p => println(p._1._1, p._1._2, p._2))
     }
   }
 }
