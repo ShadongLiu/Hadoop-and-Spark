@@ -85,14 +85,14 @@ object Q5 {
         .flatMap(c => {
           var list =
             MutableList[((Int, String, String), Int)]()
-          if (cBroadcast.value.contains(c._2._2.head)) {
-            val nationKey = c._2._2.head
+          //if (cBroadcast.value.contains(c._2._2.head)) {
+            val nationKey = c._2._2
             val nationName = nBroadcast.value(nationKey)
             val shipDates = c._2._1.iterator
             while (shipDates.hasNext) {
               list += (((nationKey, nationName, shipDates.next()), 1))
             }
-          }
+          //}
           list
         })
         .reduceByKey(_ + _)
