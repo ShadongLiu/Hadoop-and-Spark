@@ -86,7 +86,7 @@ object Q5 {
             val nationName = nBroadcast.value(nationKey)
             val dates = c._2._1.iterator
             while (dates.hasNext) {
-              list += (((dates.next(), nationName), 1))
+              list += (((c._1, nationName, dates.next()), 1))
             }
           }
           list
@@ -94,7 +94,7 @@ object Q5 {
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(c => println(c._1._1, c._1._2, c._2))
+        .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
       val ordersDF =
