@@ -48,7 +48,7 @@ object Q5 {
         })
         .map(line => {
           val element = line.split("\\|")
-          (element(0).toInt, (cBroadcast.value(element(1).toInt), nBroadcast.value(cBroadcast.value(element(1).toInt))))
+          (element(0).toInt, (cBroadcast.value(element(1).toInt).toInt, nBroadcast.value(cBroadcast.value(element(1).toInt))))
         })
 
       val customer = sc
