@@ -50,8 +50,8 @@ object Q6 {
           val l_extendedPrice = element(5).toDouble
           val l_discount = element(6).toDouble
           val l_tax = element(7).toDouble
-          val discPrice = extendedPrice * (1 - l_discount)
-          val charge = extendedPrice * (1 - l_discount) * (1 + l_tax)
+          val discPrice = l_extendedPrice * (1 - l_discount)
+          val charge = l_extendedPrice * (1 - l_discount) * (1 + l_tax)
           (
             (l_returnFlag, l_lineStatus),
             (l_quantity, l_extendedPrice, discPrice, charge, l_discount, 1)
@@ -97,8 +97,8 @@ object Q6 {
           val l_extendedPrice = line.getDouble(5)
           val l_discount = line.getDouble(6)
           val l_tax = line.getDouble(7)
-          val discPrice = extendedPrice * (1 - l_discount)
-          val charge = extendedPrice * (1 - l_discount) * (1 + l_tax)
+          val discPrice = l_extendedPrice * (1 - l_discount)
+          val charge = l_extendedPrice * (1 - l_discount) * (1 + l_tax)
           (
             (l_returnFlag, l_lineStatus),
             (l_quantity, l_extendedPrice, discPrice, charge, l_discount, 1)
