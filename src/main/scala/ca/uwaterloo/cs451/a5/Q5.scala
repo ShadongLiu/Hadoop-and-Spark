@@ -86,7 +86,7 @@ object Q5 {
             val nationName = nBroadcast.value(nationKey)
             val dates = c._2._1.iterator
             while (dates.hasNext) {
-              list += (((c._1, nationName, dates.next()), 1))
+              list += (((nationKey, nationName, dates.next()), 1))
             }
           }
           list
