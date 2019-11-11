@@ -104,7 +104,7 @@ object Q4 {
         .sortBy(_._1)
         .collect()
         //.foreach(p => println(p._1, p._2._1, p._2._2))
-        .foreach(p => println(s._1._1, s._1._2, s._2))
+        .foreach(s => println(s._1._1, s._1._2, s._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
       val ordersDF =
