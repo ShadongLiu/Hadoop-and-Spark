@@ -45,12 +45,17 @@ object Q5 {
           //(custKey, nationKey)
           (element(0).toInt, element(3).toInt)
         })
-        .filter(p => (p._2 == 3 || p._2 == 24))
+        //.filter(p => (p._2 == 3 || p._2 == 24))
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
       
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
+        .filter(line => {
+          val element = line.split("\\|")
+          val nationKey = cBroadcast.value(element(1).toInt)
+          nationKey == 3 || nationKey == 24
+        })
         .map(line => {
           val element = line.split("\\|")
           //(orderKey, custKey)
@@ -132,15 +137,15 @@ object Q5 {
         })
         .cogroup(orders)
         .filter(_._2._1.size != 0)
-        .flatMap(p => {
+        .flatMap(c => {
           var list =
-            scala.collection.mutable.ListBuffer[((String, String), Int)]()
-          if (cBroadcast.value.contains(p._2._2.head)) {
-            val nationKey = cBroadcast.value(p._2._2.head)
+            MutableList[((String, String), Int)]()
+          if (cBroadcast.value.contains(c._2._2.head)) {
+            val nationKey = cBroadcast.value(c._2._2.head)
             val nationName = nBroadcast.value(nationKey)
-            val dates = p._2._1.iterator
+            val dates = c._2._1.iterator
             while (dates.hasNext) {
-              list += (((dates.next(), nationName), 1))
+              list += (((nationKey, dates.next(), nationName), 1))
             }
           }
           list
@@ -148,7 +153,7 @@ object Q5 {
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(p => println(p._1._1, p._1._2, p._2))
+        .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
     }
   }
 }
