@@ -48,7 +48,7 @@ object Q5 {
         //.filter(p => (p._2 == 3 || p._2 == 24))
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
-      
+
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
         .filter(line => {
@@ -61,8 +61,6 @@ object Q5 {
           //(orderKey, custKey)
           (element(0).toInt, cBroadcast.value(element(1).toInt))
         })
-
-      
 
       val nation = sc
         .textFile(args.input() + "/nation.tbl")
@@ -87,14 +85,14 @@ object Q5 {
         .flatMap(c => {
           var list =
             MutableList[((Int, String, String), Int)]()
-          //if (cBroadcast.value.contains(c._2._2.head)) {
+          if (cBroadcast.value.contains(c._2._2.head)) {
             val nationKey = c._2._2.head
             val nationName = nBroadcast.value(nationKey)
             val shipDates = c._2._1.iterator
             while (shipDates.hasNext) {
               list += (((nationKey, nationName, shipDates.next()), 1))
             }
-          //}
+          }
           list
         })
         .reduceByKey(_ + _)
