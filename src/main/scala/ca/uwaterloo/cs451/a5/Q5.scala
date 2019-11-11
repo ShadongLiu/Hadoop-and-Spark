@@ -86,7 +86,7 @@ object Q5 {
           var list =
             MutableList[((Int, String, String), Int)]()
           //if (cBroadcast.value.contains(c._2._2.head)) {
-            val nationKey = c._2._2
+            val nationKey = c._2._2.head
             val nationName = nBroadcast.value(nationKey)
             val shipDates = c._2._1.iterator
             while (shipDates.hasNext) {
