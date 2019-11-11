@@ -48,7 +48,7 @@ object Q5 {
         })
         .map(line => {
           val element = line.split("\\|")
-          (element(0).toInt, (cBroadcast.value(element(1).toInt).toInt, nBroadcast.value(cBroadcast.value(element(1).toInt))))
+          (element(0).toInt, (cBroadcast.value(element(1).toInt), nBroadcast.value(cBroadcast.value(element(1).toInt))))
         })
 
       val customer = sc
@@ -83,7 +83,7 @@ object Q5 {
         //(orderKey, (shipdate, custKey)
         //.filter(_._2._1.nonEmpty)
         .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
-        .filter(p => p._2._2.head._1.iterator.hasNext)
+        .filter(p => p._2._2.head.iterator.hasNext)
         .flatMap(p => {
           // var list =
           //   MutableList[((Int, String, String), Int)]()
