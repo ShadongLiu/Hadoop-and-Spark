@@ -132,7 +132,7 @@ object Q7 {
         .map(line => {
           val o_orderKey = line.getInt(0)
           val custKey = line.getInt(1)
-          val custName = cBroadcast.value(custkey)
+          val custName = cBroadcast.value(custKey)
           val o_orderDate = line.getString(4)
           val o_shipPriority = line.getInt(7)
           (o_orderKey, (custName, o_orderDate, o_shipPriority))
