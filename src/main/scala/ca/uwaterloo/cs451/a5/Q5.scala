@@ -82,8 +82,6 @@ object Q5 {
           (element(0).toInt, element(10).substring(0, 7))
         })
         .cogroup(orders)
-        //(orderKey, (shipdate, custKey)
-        //.filter(_._2._1.nonEmpty)
         .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
         .filter(p => p._2._2.iterator.hasNext)
         .flatMap(p => {
@@ -97,11 +95,13 @@ object Q5 {
         .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
-      val ordersDF =
-        sparkSession.read.parquet(args.input() + "/orders")
-      val ordersRDD = ordersDF.rdd
-      val orders = ordersRDD
-        .map(line => (line.getInt(0), line.getInt(1)))
+      val nationDF =
+        sparkSession.read.parquet(args.input() + "/nation")
+      val nationRDD = nationDF.rdd
+      val nation = nationRDD
+        .map(line => (line.getInt(0), line.getString(1)))
+        .collectAsMap
+      val nBroadcast = sc.broadcast(nation)
 
       val customerDF =
         sparkSession.read.parquet(args.input() + "/customer")
@@ -112,13 +112,21 @@ object Q5 {
         .collectAsMap
       val cBroadcast = sc.broadcast(customer)
 
-      val nationDF =
-        sparkSession.read.parquet(args.input() + "/nation")
-      val nationRDD = nationDF.rdd
-      val nation = nationRDD
-        .map(line => (line.getInt(0), line.getString(1)))
-        .collectAsMap
-      val nBroadcast = sc.broadcast(nation)
+      val ordersDF =
+        sparkSession.read.parquet(args.input() + "/orders")
+      val ordersRDD = ordersDF.rdd
+      val orders = ordersRDD
+        .filter(line => {
+          val nk = cBroadcast.value(line.getInt(1))
+          //val nn = nBroadcast.value(nk)
+          nk == 3 || nk == 24
+        })
+        .map(line => {
+          val nk = cBroadcast.value(line.getInt(1))
+          val nn = nBroadcast.value(nk)
+          (line.getInt(0),(nk,nn))
+        })
+
 
       val lineitemDF =
         sparkSession.read.parquet(args.input() + "/lineitem")
@@ -127,27 +135,20 @@ object Q5 {
         .map(line => {
           val orderKey = line.getInt(0)
           val shipDate = line.getString(10)
-          (orderKey, shipDate.substring(0, shipDate.lastIndexOf('-')))
+          (orderKey, shipDate.substring(0, 7))
         })
         .cogroup(orders)
-        .filter(_._2._1.size != 0)
-        .flatMap(c => {
-          var list =
-            MutableList[((Int, String, String), Int)]()
-          if (cBroadcast.value.contains(c._2._2.head)) {
-            val nationKey = cBroadcast.value(c._2._2.head)
-            val nationName = nBroadcast.value(nationKey)
-            val dates = c._2._1.iterator
-            while (dates.hasNext) {
-              list += (((nationKey, dates.next(), nationName), 1))
-            }
-          }
-          list
+        .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
+        .filter(p => p._2._2.iterator.hasNext)
+        .flatMap(p => {
+          val nationKey = p._2._2.head._1
+          val nationName = p._2._2.head._2
+          p._2._1.map(date => ((nationKey, nationName, date), 1))
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(c => println(c._1._1, c._1._2, c._2))
+        .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
     }
   }
 }
