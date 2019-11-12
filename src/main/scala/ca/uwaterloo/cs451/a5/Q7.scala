@@ -139,7 +139,7 @@ object Q7 {
         })
         .cogroup(lineitem)
         .filter(s => s._2._1.nonEmpty && s._2._2.nonEmpty)
-        .map(p => {
+        .map(s => {
           val cName = s._2._1.head._1
           val orderKey = s._1
           val revenue = s._2._2.head
