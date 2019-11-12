@@ -24,7 +24,6 @@ import org.apache.spark.SparkConf
 import org.rogach.scallop._
 import org.apache.spark.Partitioner
 import org.apache.spark.sql.SparkSession
-import scala.collection.mutable.MutableList
 
 object Q5 {
   val log = Logger.getLogger(getClass().getName())
@@ -57,18 +56,20 @@ object Q5 {
         })
         .collectAsMap()
       val cBroadcast = sc.broadcast(customer)
+
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
         .filter(line => {
           val element = line.split("\\|")
           val nk = cBroadcast.value(element(1).toInt)
-          //val nn = nBroadcast.value(nk)
+          //3 for Canada and 24 for United States
           nk == 3 || nk == 24
         })
         .map(line => {
           val element = line.split("\\|")
           val nk = cBroadcast.value(element(1).toInt)
           val nn = nBroadcast.value(nk)
+          //(orderKey, (nationKey, nationName))
           (element(0).toInt, (nk, nn))
         })
 
@@ -81,13 +82,13 @@ object Q5 {
         })
         .cogroup(orders)
         //(orderKey, (shipdate, custKey)
-        //.filter(_._2._1.nonEmpty)
         .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
+        //use (nationKey, nationName) to iterate
         .filter(p => p._2._2.iterator.hasNext)
         .flatMap(p => {
           val nationKey = p._2._2.head._1
           val nationName = p._2._2.head._2
-          p._2._1.map(date => ((nationKey, nationName, date), 1))
+          p._2._1.map(shipDate => ((nationKey, nationName, shipDate), 1))
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)
@@ -95,24 +96,22 @@ object Q5 {
         .foreach(c => println(c._1._1, c._1._2, c._1._3, c._2))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
-      
+
       val customerDF =
         sparkSession.read.parquet(args.input() + "/customer")
       val customerRDD = customerDF.rdd
       val customer = customerRDD
         .map(line => {
-          //(custKey, nationKey)
           (line.getInt(0), line.getInt(3))
         })
         .collectAsMap
       val cBroadcast = sc.broadcast(customer)
-      
+
       val nationDF =
         sparkSession.read.parquet(args.input() + "/nation")
       val nationRDD = nationDF.rdd
       val nation = nationRDD
         .map(line => {
-          //(nationKey, nationName)
           (line.getInt(0), line.getString(1))
         })
         .collectAsMap
@@ -124,7 +123,6 @@ object Q5 {
       val orders = ordersRDD
         .filter(line => {
           val nk = cBroadcast.value(line.getInt(1))
-          //val nn = nBroadcast.value(nk)
           nk == 3 || nk == 24
         })
         .map(line => {
@@ -148,7 +146,7 @@ object Q5 {
         .flatMap(p => {
           val nationKey = p._2._2.head._1
           val nationName = p._2._2.head._2
-          p._2._1.map(date => ((nationKey, nationName, date), 1))
+          p._2._1.map(shipDate => ((nationKey, nationName, shipDate), 1))
         })
         .reduceByKey(_ + _)
         .sortBy(_._1)

@@ -43,7 +43,8 @@ object Q3 {
         .textFile(args.input() + "/part.tbl")
         .map(line => {
           val element = line.split("\\|")
-          (element(0).toInt, element(1))
+          val p_name = element(1)
+          (element(0).toInt, p_name)
         })
         .collectAsMap()
       val pBroadcast = sc.broadcast(part)
@@ -52,7 +53,8 @@ object Q3 {
         .textFile(args.input() + "/supplier.tbl")
         .map(line => {
           val element = line.split("\\|")
-          (element(0).toInt, element(1))
+          val s_name = element(1)
+          (element(0).toInt, s_name)
         })
         .collectAsMap()
       val sBroadcast = sc.broadcast(supplier)
@@ -61,11 +63,12 @@ object Q3 {
         .textFile(args.input() + "/lineitem.tbl")
         .filter(line => line.split("\\|")(10).contains(date))
         .map(line => {
-          val lines = line.split("\\|")
-          val orderKey = lines(0).toInt
-          val partKey = lines(1).toInt
-          val suppKey = lines(2).toInt
+          val element = line.split("\\|")
+          val orderKey = element(0).toInt
+          val partKey = element(1).toInt
+          val suppKey = element(2).toInt
           //hash join with broadcast variables
+          //(l_oderKey, p_name, s_name)
           (orderKey, (pBroadcast.value(partKey), sBroadcast.value(suppKey)))
         })
         .sortByKey()

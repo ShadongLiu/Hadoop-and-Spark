@@ -65,17 +65,22 @@ object Q7 {
       val orders = sc
         .textFile(args.input() + "/orders.tbl")
         .filter(line => {
-          val custKey = line.split("\\|")(1).toInt
-          (cBroadcast.value.contains(custKey)) && (line.split("\\|")(4) < date)
+          val element = line.split("\\|")
+          val custKey = element(1).toInt
+          val o_oderDate = element(4)
+          //c_custkey = o_custkey and o_orderdate < "YYYY-MM-DD"
+          (cBroadcast.value.contains(custKey)) && (o_oderDate < date)
         })
         .map(line => {
           val element = line.split("\\|")
           val o_orderKey = element(0).toInt
-          val custName = cBroadcast.value(element(1).toInt)
+          val custKey = element(1).toInt
+          val custName = cBroadcast.value(custKey)
           val o_orderDate = element(4)
           val o_shipPriority = element(7)
           (o_orderKey, (custName, o_orderDate, o_shipPriority))
         })
+        //reduce-side join, using cogroup
         .cogroup(lineitem)
         .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
         .map(p => {
@@ -121,11 +126,13 @@ object Q7 {
       val orders = ordersRDD
         .filter(line => {
           val custKey = line.getInt(1)
-          (cBroadcast.value.contains(custKey)) && (line.getString(4) < date)
+          val o_orderDate = line.getString(4)
+          (cBroadcast.value.contains(custKey)) && (o_orderDate < date)
         })
         .map(line => {
           val o_orderKey = line.getInt(0)
-          val custName = cBroadcast.value(line.getInt(1))
+          val custKey = line.getInt(1)
+          val custName = cBroadcast.value(custkey)
           val o_orderDate = line.getString(4)
           val o_shipPriority = line.getInt(7)
           (o_orderKey, (custName, o_orderDate, o_shipPriority))

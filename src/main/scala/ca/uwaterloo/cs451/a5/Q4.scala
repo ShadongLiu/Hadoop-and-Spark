@@ -24,7 +24,7 @@ import org.apache.spark.SparkConf
 import org.rogach.scallop._
 import org.apache.spark.Partitioner
 import org.apache.spark.sql.SparkSession
-import scala.collection.mutable.MutableList
+
 
 object Q4 {
   val log = Logger.getLogger(getClass().getName())
@@ -77,21 +77,25 @@ object Q4 {
           val element = line.split("\\|")
           (element(0).toInt, element(10))
         })
+        //use cogroup for lineitem and orders join
+        //(orderKey, (shipDate, custKey))
         .cogroup(orders)
-        //(orderKey, (count, custKey))
         .filter(_._2._1.nonEmpty)
         .map(s => {
           var count = 0
+          //use shipdate to iterate
           val dateIter = s._2._1.iterator
           while (dateIter.hasNext) {
             dateIter.next()
             count += 1
           }
+          //(orderKey, custkey, count)
           (s._1, s._2._2.head, count)
         })
         .map(s => {
           val nationKey = cBroadcast.value(s._2)
           val nationName = nBroadcast.value(nationKey)
+          //((nationKey, nationName), count)
           ((nationKey, nationName), s._3)
         })
         .reduceByKey(_ + _)
@@ -133,7 +137,7 @@ object Q4 {
           (line.getInt(0), line.getString(10))
         })
         .cogroup(orders)
-        //(orderKey, (count, custKey))
+        //(orderKey, (date, custKey))
         .filter(_._2._1.nonEmpty)
         .map(s => {
           var count = 0

@@ -43,7 +43,9 @@ object Q2 {
         .textFile(args.input() + "/orders.tbl")
         .map(line => {
           val element = line.split("\\|")
-          (element(0).toInt, element(6))
+          val clerk = element(6)
+          //(orderKey, clerk)
+          (element(0).toInt, clerk)
         })
       val lineitem = sc
         .textFile(args.input() + "/lineitem.tbl")
@@ -52,6 +54,7 @@ object Q2 {
         })
         .map(line => {
           val element = line.split("\\|")
+          //(orderKey, shipdate)
           (element(0).toInt, element(10))
         })
         //reduce-side join, using cogroup transformation
