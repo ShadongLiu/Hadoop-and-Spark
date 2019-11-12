@@ -33,6 +33,8 @@ object Q5 {
     val args = new Conf(argv)
 
     log.info("Input: " + args.input())
+    log.info("Text: " + args.text())
+    log.info("Parquet: " + args.parquet())
 
     val conf = new SparkConf().setAppName("Q5")
     val sc = new SparkContext(conf)
