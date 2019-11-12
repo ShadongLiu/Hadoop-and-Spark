@@ -146,7 +146,7 @@ object Q5 {
         .reduceByKey(_ + _)
         .sortBy(_._1)
         .collect()
-        .foreach(p => println(c._1._1, c._1._2, c._2))
+        .foreach(c => println(c._1._1, c._1._2, c._2))
     }
   }
 }
