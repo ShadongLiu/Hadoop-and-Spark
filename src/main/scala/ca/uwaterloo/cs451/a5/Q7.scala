@@ -82,19 +82,19 @@ object Q7 {
         })
         //reduce-side join, using cogroup
         .cogroup(lineitem)
-        .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
-        .map(p => {
-          val cName = p._2._1.head._1
-          val orderKey = p._1
-          val revenue = p._2._2.head
-          val o_orderDate = p._2._1.head._2
-          val o_shipPriority = p._2._1.head._3
+        .filter(s => s._2._1.nonEmpty && s._2._2.nonEmpty)
+        .map(s => {
+          val cName = s._2._1.head._1
+          val orderKey = s._1
+          val revenue = s._2._2.head
+          val o_orderDate = s._2._1.head._2
+          val o_shipPriority = s._2._1.head._3
           (revenue, (cName, orderKey, revenue, o_orderDate, o_shipPriority))
         })
         .sortByKey(false)
         .collect()
         .take(10)
-        .foreach(p => println(p._2._1, p._2._2, p._2._3, p._2._4, p._2._5))
+        .foreach(s => println(s._2._1, s._2._2, s._2._3, s._2._4, s._2._5))
     } else if (args.parquet()) {
       val sparkSession = SparkSession.builder.getOrCreate
 
@@ -138,19 +138,19 @@ object Q7 {
           (o_orderKey, (custName, o_orderDate, o_shipPriority))
         })
         .cogroup(lineitem)
-        .filter(p => p._2._1.nonEmpty && p._2._2.nonEmpty)
+        .filter(s => s._2._1.nonEmpty && s._2._2.nonEmpty)
         .map(p => {
-          val cName = p._2._1.head._1
-          val orderKey = p._1
-          val revenue = p._2._2.head
-          val o_orderDate = p._2._1.head._2
-          val o_shipPriority = p._2._1.head._3
+          val cName = s._2._1.head._1
+          val orderKey = s._1
+          val revenue = s._2._2.head
+          val o_orderDate = s._2._1.head._2
+          val o_shipPriority = s._2._1.head._3
           (revenue, (cName, orderKey, revenue, o_orderDate, o_shipPriority))
         })
         .sortByKey(false)
         .collect()
         .take(10)
-        .foreach(p => println(p._2._1, p._2._2, p._2._3, p._2._4, p._2._5))
+        .foreach(s => println(s._2._1, s._2._2, s._2._3, s._2._4, s._2._5))
     }
   }
 }
