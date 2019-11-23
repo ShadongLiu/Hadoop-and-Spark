@@ -22,13 +22,12 @@ import org.apache.hadoop.fs._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
-import scala.math.exp
 
 class Conf2(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, model)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
-  val model = opt[Boolean](descr = "model path", required = true)
+  val model = opt[String](descr = "model path", required = true)
   verify()
 }
 
@@ -51,11 +50,12 @@ object ApplySpamClassifier {
 
     //save the model as a broadcast value
     val model = sc.textFile(args.model() + "/part-00000")
-    val w = model .map(m => {
-            val tokens = m.substring(1, m.length() - 1).split(",")
-            (tokens(0).toInt, tokens(1).toDouble)
-          })
-          .collectAsMap()
+    val w = model
+      .map(m => {
+        val tokens = m.substring(1, m.length() - 1).split(",")
+        (tokens(0).toInt, tokens(1).toDouble)
+      })
+      .collectAsMap()
     val wBroadcast = sc.broadcast(w)
     // Scores a document based on its list of features.
     def spamminess(features: Array[Int]): Double = {
