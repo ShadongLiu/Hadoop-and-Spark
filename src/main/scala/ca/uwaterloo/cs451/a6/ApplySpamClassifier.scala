@@ -25,7 +25,7 @@ import org.rogach.scallop._
 import scala.math.exp
 
 class Conf2(args: Seq[String]) extends ScallopConf(args) {
-  mainOptions = Seq(input, model, shuffle)
+  mainOptions = Seq(input, output, model)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
   val model = opt[Boolean](descr = "model path", required = true)
@@ -50,7 +50,13 @@ object ApplySpamClassifier {
     val textFile = sc.textFile(args.input())
 
     //save the model as a broadcast value
-    val wBroadcast = sc.broadcast(sc.textFile(args.model() + "/part-00000"))
+    val wBroadcast = sc
+      .broadcast(sc.textFile(args.model() + "/part-00000"))
+      .map(m => {
+        val tokens = m.substring(1, m.length() - 1).split(",")
+        (tokens(0).toInt, tokens(1).toDouble)
+      })
+      .collectAsMap()
 
     // Scores a document based on its list of features.
     def spamminess(features: Array[Int]): Double = {
@@ -69,7 +75,7 @@ object ApplySpamClassifier {
         val score = spamminess(features)
         val classify = if (score > 0) "spam" else "ham"
 
-        (elements(0),elements(1),score,classify)
+        (elements(0), elements(1), score, classify)
       })
     tested.saveAsTextFile(args.output())
   }
