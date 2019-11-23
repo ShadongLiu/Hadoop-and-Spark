@@ -46,7 +46,7 @@ object TrainSpamClassifier {
     val outputDir = new Path(args.model())
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
-    val textFile = sc.textFile(args.input())
+    var textFile = sc.textFile(args.input())
 
     // w is the weight vector (make sure the variable is within scope)
     val w = scala.collection.mutable.Map[Int, Double]()
@@ -95,6 +95,6 @@ object TrainSpamClassifier {
         w
       })
 
-    trained.saveAsTextFile()
+    trained.saveAsTextFile(args.model())
   }
 }
