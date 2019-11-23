@@ -44,7 +44,7 @@ object ApplySpamClassifier {
 
     val conf = new SparkConf().setAppName("ApplySpamClassifier")
     val sc = new SparkContext(conf)
-    val outputDir = new Path(args.model())
+    val outputDir = new Path(args.output())
     FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
 
     val textFile = sc.textFile(args.input())
