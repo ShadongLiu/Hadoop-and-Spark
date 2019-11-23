@@ -50,14 +50,13 @@ object ApplySpamClassifier {
     val textFile = sc.textFile(args.input())
 
     //save the model as a broadcast value
-    val wBroadcast = sc
-      .broadcast(sc.textFile(args.model() + "/part-00000"))
-      .map(m => {
-        val tokens = m.substring(1, m.length() - 1).split(",")
-        (tokens(0).toInt, tokens(1).toDouble)
-      })
-      .collectAsMap()
-
+    val model = sc.textFile(args.model() + "/part-00000")
+    val w = model .map(m => {
+            val tokens = m.substring(1, m.length() - 1).split(",")
+            (tokens(0).toInt, tokens(1).toDouble)
+          })
+          .collectAsMap()
+    val wBroadcast = sc.broadcast(w)
     // Scores a document based on its list of features.
     def spamminess(features: Array[Int]): Double = {
       var score = 0d
