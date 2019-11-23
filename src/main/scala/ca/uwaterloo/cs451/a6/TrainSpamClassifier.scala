@@ -22,9 +22,7 @@ import org.apache.hadoop.fs._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
-import org.apache.spark.Partitioner
-import org.apache.spark.sql.SparkSession
-import java.nio.file.FileSystem
+import scala.math.exp
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, model, shuffle)
