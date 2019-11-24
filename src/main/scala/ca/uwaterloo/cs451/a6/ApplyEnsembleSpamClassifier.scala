@@ -97,17 +97,17 @@ object ApplyEnsembleSpamClassifier {
         val score_x = spamminess(features, w_x_Broadcast.value)
         val score_y = spamminess(features, w_y_Broadcast.value)
         val score_britney = spamminess(features, w_britney_Broadcast.value)
-        var ensemble_score = 0
+        var ensemble_score = 0d
         if (method == "average") {
           ensemble_score = (score_x + score_y + score_britney) / 3
         } else {
-          var vote_x = if (score_x > 0) 1 else -1
-          var vote_y = if (score_y > 0) 1 else -1
-          var vote_britney = if (score_britney > 0) 1 else -1
-          score = vote_x + vote_y + vote_britney
+          var vote_x = if (score_x > 0) 1d else -1d
+          var vote_y = if (score_y > 0) 1d else -1d
+          var vote_britney = if (score_britney > 0) 1d else -1d
+          ensemble_score = vote_x + vote_y + vote_britney
         }
-        val classify = if (score > 0) "spam" else "ham"
-        (docid, label, score, classify)
+        val classify = if (ensemble_score > 0) "spam" else "ham"
+        (docid, label, ensemble_score, classify)
       })
     tested.saveAsTextFile(args.output())
   }
