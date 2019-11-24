@@ -26,7 +26,6 @@ import scala.collection.mutable.Map
 import scala.util.Random
 import scala.math.exp
 
-
 class Conf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, model, shuffle)
   val input = opt[String](descr = "input path", required = true)
@@ -67,14 +66,13 @@ object TrainSpamClassifier {
         .map(t => t._2)
     }
 
-    val delta = 0.002
-
     val trained = trainingSet
       .map(line => {
         // Parse input
         val elements = line.split("\\s+")
         val docid = elements(0)
-        val isSpam = if (elements(1) == "spam") 1d else 0d
+        val label = elements(1)
+        val isSpam = if (label == "spam") 1d else 0d
         val features = elements.drop(2).map(_.toInt)
         (0, (docid, isSpam, features))
       })
@@ -82,6 +80,7 @@ object TrainSpamClassifier {
       // Then run the trainer
       .flatMap(p => {
         p._2.foreach(s => {
+          val delta = 0.002
           val isSpam = s._2
           val features = s._3
           val score = spamminess(features)
