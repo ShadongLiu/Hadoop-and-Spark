@@ -22,7 +22,10 @@ import org.apache.hadoop.fs._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
+import scala.collection.mutable.Map
+import scala.util.Random
 import scala.math.exp
+
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, model, shuffle)
@@ -43,13 +46,12 @@ object TrainSpamClassifier {
 
     val conf = new SparkConf().setAppName("TrainSpamClassifier")
     val sc = new SparkContext(conf)
-    val outputDir = new Path(args.model())
-    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
+    FileSystem.get(sc.hadoopConfiguration).delete(newPath(args.model()), true)
 
-    var textFile = sc.textFile(args.input())
+    var trainingSet = sc.textFile(args.input())
 
     // w is the weight vector (make sure the variable is within scope)
-    val w = scala.collection.mutable.Map[Int, Double]()
+    val w = Map[Int, Double]()
 
     // Scores a document based on its list of features.
     def spamminess(features: Array[Int]): Double = {
@@ -58,19 +60,19 @@ object TrainSpamClassifier {
       score
     }
 
-    if (args.shuffle() == true) {
-      textFile = textFile
-        .map(line => (scala.util.Random.nextInt(), line))
+    if (args.shuffle()) {
+      trainingSet = trainingSet
+        .map(line => (Random.nextInt(), line))
         .sortByKey()
-        .map(p => p._2)
+        .map(t => t._2)
     }
 
     val delta = 0.002
 
-    val trained = textFile
+    val trained = trainingSet
       .map(line => {
         // Parse input
-        val elements = line.split(" ")
+        val elements = line.split("\\s+")
         val docid = elements(0)
         val isSpam = if (elements(1) == "spam") 1d else 0d
         val features = elements.drop(2).map(_.toInt)
