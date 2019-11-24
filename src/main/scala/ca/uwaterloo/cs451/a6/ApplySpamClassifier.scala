@@ -63,9 +63,8 @@ object ApplySpamClassifier {
       score
     }
 
-
-    val classifier = sc.textFile(args.input())
-    val tested = classifier
+    val testSet = sc.textFile(args.input())
+    val tested = testSet
       .map(line => {
         // Parse input
         val elements = line.split("\\s+")

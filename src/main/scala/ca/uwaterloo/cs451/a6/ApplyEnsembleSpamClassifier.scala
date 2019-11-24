@@ -22,6 +22,7 @@ import org.apache.hadoop.fs._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
+import scala.collection.Map
 
 class Conf3(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, model, method)
@@ -43,12 +44,11 @@ object ApplyEnsembleSpamClassifier {
     log.info("Model: " + args.model())
     log.info("Method: " + args.method())
 
+    val method = args.method()
+
     val conf = new SparkConf().setAppName("ApplyEnsembleSpamClassifier")
     val sc = new SparkContext(conf)
-    val outputDir = new Path(args.output())
-    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
-
-    val textFile = sc.textFile(args.input())
+    FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
 
     //save the model as a broadcast value
     val model_x = sc.textFile(args.model() + "/part-00000")
@@ -78,7 +78,7 @@ object ApplyEnsembleSpamClassifier {
       .collectAsMap()
     val w_britney_Broadcast = sc.broadcast(w_britney)
     // Scores a document based on its list of features.
-    def spamminess(features: Array[Int], weights: scala.collection.Map[Int, Double]): Double = {
+    def spamminess(features: Array[Int], weights: Map[Int, Double]): Double = {
       var score = 0d
       features.foreach(
         f => if (weights.contains(f)) score += weights(f)
@@ -86,27 +86,28 @@ object ApplyEnsembleSpamClassifier {
       score
     }
 
-    val method = args.method()
-    
-    val tested = textFile
+    val testSet = sc.textFile(args.input())
+    val tested = testSet
       .map(line => {
         // Parse input
-        val elements = line.split(" ")
+        val elements = line.split("\\s+")
+        val docid = elements(0)
+        val label = elements(1)
         val features = elements.drop(2).map(_.toInt)
         val score_x = spamminess(features, w_x_Broadcast.value)
         val score_y = spamminess(features, w_y_Broadcast.value)
         val score_britney = spamminess(features, w_britney_Broadcast.value)
-        var score = 0d
+        var ensemble_score = 0
         if (method == "average") {
-          score = (score_x + score_y + score_britney) / 3
+          ensemble_score = (score_x + score_y + score_britney) / 3
         } else {
-          var vote_x = if (score_x > 0) 1d else -1d
-          var vote_y = if (score_y > 0) 1d else -1d
-          var vote_britney = if (score_britney > 0) 1d else -1d
+          var vote_x = if (score_x > 0) 1 else -1
+          var vote_y = if (score_y > 0) 1 else -1
+          var vote_britney = if (score_britney > 0) 1 else -1
           score = vote_x + vote_y + vote_britney
         }
         val classify = if (score > 0) "spam" else "ham"
-        (elements(0), elements(1), score, classify)
+        (docid, label, score, classify)
       })
     tested.saveAsTextFile(args.output())
   }
