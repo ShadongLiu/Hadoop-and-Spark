@@ -46,7 +46,7 @@ object TrainSpamClassifier {
 
     val conf = new SparkConf().setAppName("TrainSpamClassifier")
     val sc = new SparkContext(conf)
-    FileSystem.get(sc.hadoopConfiguration).delete(newPath(args.model()), true)
+    FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.model()), true)
 
     var trainingSet = sc.textFile(args.input())
 
@@ -79,13 +79,14 @@ object TrainSpamClassifier {
         (0, (docid, isSpam, features))
       })
       .groupByKey(1)
-      // Then run the trainer...
+      // Then run the trainer
       .flatMap(p => {
         p._2.foreach(s => {
           val isSpam = s._2
           val features = s._3
           val score = spamminess(features)
           val prob = 1.0 / (1 + exp(-score))
+          // Update the weights as follows:
           features.foreach(f => {
             if (w.contains(f)) {
               w(f) += (isSpam - prob) * delta
