@@ -32,7 +32,7 @@ class Conf3(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
-object ApplySpamClassifier {
+object ApplyEnsembleSpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
