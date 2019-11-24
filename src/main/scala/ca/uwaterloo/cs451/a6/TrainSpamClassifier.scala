@@ -47,8 +47,6 @@ object TrainSpamClassifier {
     val sc = new SparkContext(conf)
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.model()), true)
 
-    var trainingSet = sc.textFile(args.input())
-
     // w is the weight vector (make sure the variable is within scope)
     val w = Map[Int, Double]()
 
@@ -59,13 +57,15 @@ object TrainSpamClassifier {
       score
     }
 
+    var trainingSet = sc.textFile(args.input())
+    
     if (args.shuffle()) {
       trainingSet = trainingSet
         .map(line => (Random.nextInt(), line))
         .sortByKey()
         .map(t => t._2)
     }
-
+    
     val trained = trainingSet
       .map(line => {
         // Parse input

@@ -43,10 +43,7 @@ object ApplySpamClassifier {
 
     val conf = new SparkConf().setAppName("ApplySpamClassifier")
     val sc = new SparkContext(conf)
-    val outputDir = new Path(args.output())
-    FileSystem.get(sc.hadoopConfiguration).delete(outputDir, true)
-
-    val textFile = sc.textFile(args.input())
+    FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
 
     //save the model as a broadcast value
     val model = sc.textFile(args.model() + "/part-00000")
@@ -66,15 +63,19 @@ object ApplySpamClassifier {
       score
     }
 
-    val tested = textFile
+
+    val classifier = sc.textFile(args.input())
+    val tested = classifier
       .map(line => {
         // Parse input
-        val elements = line.split(" ")
+        val elements = line.split("\\s+")
+        val docid = elements(0)
+        val label = elements(1)
         val features = elements.drop(2).map(_.toInt)
         val score = spamminess(features)
         val classify = if (score > 0) "spam" else "ham"
 
-        (elements(0), elements(1), score, classify)
+        (docid, label, score, classify)
       })
     tested.saveAsTextFile(args.output())
   }
