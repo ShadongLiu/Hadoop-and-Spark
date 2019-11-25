@@ -55,13 +55,16 @@ object ApplyEnsembleSpamClassifier {
     val model_path = List("/part-00000", "/part-00001", "part-00002")
     val models = sc.textFile(args.model() + model_path)
     val ensemble = models
-      .map(line => {
-        val elements = line.substring(1, line.length() - 1).split(",")
-        val features = elements(0).toInt
-        val trained_weights = elements(1).toDouble
-        (features, trained_weights)
+      .map(model => {
+        model
+          .map(line => {
+            val elements = line.substring(1, line.length() - 1).split(",")
+            val features = elements(0).toInt
+            val trained_weights = elements(1).toDouble
+            (features, trained_weights)
+          })
+          .collectAsMap()
       })
-      .collectAsMap()
     val modelBroadcast = sc.broadcast(ensemble)
 
     // Scores a document based on its list of features.
@@ -83,7 +86,10 @@ object ApplyEnsembleSpamClassifier {
         val features = elements.drop(2).map(_.toInt)
         var ensembleScores = MutableList[Double]()
         for (i <- 0 until modelBroadcast.value.size) {
-          ensembleScores += spamminess(features, modelBroadcast.value.get(i))
+          ensembleScores += spamminess(
+            features,
+            modelBroadcast.value.get(i).get
+          )
         }
         var score = 0d
         if (method == "average") {
@@ -91,7 +97,7 @@ object ApplyEnsembleSpamClassifier {
         } else {
           var score = 0d
           ensembleScores.foreach(s => {
-            if (s > 0) score +=1d else score -=1d
+            if (s > 0) score += 1d else score -= 1d
           })
         }
         val classify = if (score > 0) "spam" else "ham"
