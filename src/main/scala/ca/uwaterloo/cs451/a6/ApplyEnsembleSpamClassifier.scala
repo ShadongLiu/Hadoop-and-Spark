@@ -60,7 +60,7 @@ object ApplyEnsembleSpamClassifier {
         (feature, trained_weight)
       })
       .collectAsMap()
-    val x_map = sc.broadcast(w_x).value
+    val w_x_Broadcast = sc.broadcast(w_x)
 
     val model_y = sc.textFile(args.model() + "/part-00001")
     val w_y = model_y
@@ -71,7 +71,7 @@ object ApplyEnsembleSpamClassifier {
         (feature, trained_weight)
       })
       .collectAsMap()
-    val y_map = sc.broadcast(w_y).value
+    val w_y_Broadcast = sc.broadcast(w_y)
 
     val model_b = sc.textFile(args.model() + "/part-00002")
     val w_britney = model_b
@@ -82,7 +82,7 @@ object ApplyEnsembleSpamClassifier {
         (feature, trained_weight)
       })
       .collectAsMap()
-    val b_map = sc.broadcast(w_britney).value
+    val w_britney_Broadcast = sc.broadcast(w_britney)
     // Scores a document based on its list of features.
     def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
       var score = 0d
@@ -100,9 +100,9 @@ object ApplyEnsembleSpamClassifier {
         val docid = elements(0)
         val label = elements(1)
         val features = elements.drop(2).map(_.toInt)
-        val score_x = spamminess(features, x_map)
-        val score_y = spamminess(features, y_map)
-        val score_britney = spamminess(features, b_map)
+        val score_x = spamminess(features, w_x_Broadcast.value)
+        val score_y = spamminess(features, w_y_Broadcast.value)
+        val score_britney = spamminess(features, w_britney_Broadcast.value)
         var ensemble_score = 0d
         if (method == "average") {
           ensemble_score = (score_x + score_y + score_britney) / 3
