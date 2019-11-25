@@ -50,21 +50,22 @@ object ApplyEnsembleSpamClassifier {
     val sc = new SparkContext(conf)
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
 
-    //save the model as a broadcast value
+    //helper function to get the (feature weight) pair for each model
+    def trainedWeight(modelPath: String): Map[Int, Double] = {
+      val models = sc.textFile(modelPath)
+      models
+        .map(m => {
+          val elements = m.substring(1, m.length() - 1).split(",")
+          val feature = elements(0).toInt
+          val trained_weight = elements(1).toDouble
+          (feature, trained_weight)
+        })
+        .collectAsMap()
+    }
+
     val modelXPath = args.model() + "/part-00000"
     val modelYPath = args.model() + "/part-00001"
     val modelBPath = args.model() + "/part-00002"
-
-    def trainedWeight(modelPath: String): Map[Int, Double] = {
-      val models = sc.textFile(modelPath)
-      models.map(m =>{
-      val elements = m.substring(1, m.length() - 1).split(",")
-      val feature = elements(0).toInt
-      val trained_weight = elements(1).toDouble
-      (feature, trained_weight)
-      })
-      .collectAsMap()
-    }
 
     val w_x = sc.broadcast(trainedWeight(modelXPath))
     val w_y = sc.broadcast(trainedWeight(modelYPath))
@@ -92,8 +93,10 @@ object ApplyEnsembleSpamClassifier {
         val score_britney = spamminess(features, w_b.value)
         var ensemble_score = 0d
         if (method == "average") {
+          //score averaging
           ensemble_score = (score_x + score_y + score_britney) / 3
         } else {
+          //voting
           var vote = 0
           if (score_x > 0) vote += 1 else vote -= 1
           if (score_y > 0) vote += 1 else vote -= 1
