@@ -54,12 +54,12 @@ object ApplyEnsembleSpamClassifier {
     log.info("Model: " + args.model())
     log.info("Method: " + args.method())
 
-    val method = sc.broadcast(args.method())
+    
 
     val conf = new SparkConf().setAppName("ApplyEnsembleSpamClassifier")
     val sc = new SparkContext(conf)
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
-
+    val method = sc.broadcast(args.method())
     //save the models as a broadcast value
     val models = MutableList(
       sc.textFile(args.model() + "/part-00000"),
