@@ -23,7 +23,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
 import scala.collection.Map
-import scala.collection.mutable.MutableList
 
 class ApplyEnsembleConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, model, method)
@@ -37,15 +36,6 @@ class ApplyEnsembleConf(args: Seq[String]) extends ScallopConf(args) {
 object ApplyEnsembleSpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
-  // Scores a document based on its list of features.
-  def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
-    var score = 0d
-    features.foreach(
-      f => if (w.contains(f)) score += w(f)
-    )
-    score
-  }
-
   def main(argv: Array[String]) {
     val args = new ApplyEnsembleConf(argv)
 
@@ -54,30 +44,47 @@ object ApplyEnsembleSpamClassifier {
     log.info("Model: " + args.model())
     log.info("Method: " + args.method())
 
-    
+    val method = args.method()
 
     val conf = new SparkConf().setAppName("ApplyEnsembleSpamClassifier")
     val sc = new SparkContext(conf)
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
-    val method = sc.broadcast(args.method())
-    //save the models as a broadcast value
-    val models = MutableList(
-      sc.textFile(args.model() + "/part-00000"),
-      sc.textFile(args.model() + "/part-00001"),
-      sc.textFile(args.model() + "/part-00002")
-    )
-    val ensemble = models
-      .map(model => {
-        model
-          .map(line => {
-            val elements = line.substring(1, line.length() - 1).split(",")
-            val features = elements(0).toInt
-            val trained_weights = elements(1).toDouble
-            (features, trained_weights)
-          })
-          .collectAsMap()
+
+    //save the model as a broadcast value
+    val model_x = sc.textFile(args.model() + "/part-00000")
+    val w_x = model_x
+      .map(m => {
+        val elements = m.substring(1, m.length() - 1).split(",")
+        (elements(0).toInt, elements(1).toDouble)
       })
-    val modelBroadcast = sc.broadcast(ensemble)
+      .collectAsMap()
+    val w_x_Broadcast = sc.broadcast(w_x)
+
+    val model_y = sc.textFile(args.model() + "/part-00001")
+    val w_y = model_y
+      .map(m => {
+        val elements = m.substring(1, m.length() - 1).split(",")
+        (elements(0).toInt, elements(1).toDouble)
+      })
+      .collectAsMap()
+    val w_y_Broadcast = sc.broadcast(w_y)
+
+    val model_b = sc.textFile(args.model() + "/part-00002")
+    val w_britney = model_b
+      .map(m => {
+        val elements = m.substring(1, m.length() - 1).split(",")
+        (elements(0).toInt, elements(1).toDouble)
+      })
+      .collectAsMap()
+    val w_britney_Broadcast = sc.broadcast(w_britney)
+    // Scores a document based on its list of features.
+    def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
+      var score = 0d
+      features.foreach(
+        f => if (w.contains(f)) score += w(f)
+      )
+      score
+    }
 
     val testSet = sc.textFile(args.input())
     val tested = testSet
@@ -87,28 +94,21 @@ object ApplyEnsembleSpamClassifier {
         val docid = elements(0)
         val label = elements(1)
         val features = elements.drop(2).map(_.toInt)
-        var ensembleScores = MutableList[Double]()
-        for (i <- 0 until modelBroadcast.value.size) {
-          ensembleScores += spamminess(
-            features,
-            modelBroadcast.value.get(i).get
-          )
-        }
-
+        val score_x = spamminess(features, w_x_Broadcast.value)
+        val score_y = spamminess(features, w_y_Broadcast.value)
+        val score_britney = spamminess(features, w_britney_Broadcast.value)
+        var ensemble_score = 0d
         if (method == "average") {
-          var score = ensembleScores.sum / ensemble.size.toDouble
-          val classify = if (score > 0) "spam" else "ham"
-          (docid, label, score, classify)
+          ensemble_score = (score_x + score_y + score_britney) / 3
         } else {
-          var score = 0d
-          ensembleScores.foreach(s => {
-            if (s > 0) score += 1d else score -= 1d
-          })
-          val classify = if (score > 0) "spam" else "ham"
-          (docid, label, score, classify)
+          var vote_x = if (score_x > 0) 1d else -1d
+          var vote_y = if (score_y > 0) 1d else -1d
+          var vote_britney = if (score_britney > 0) 1d else -1d
+          ensemble_score = vote_x + vote_y + vote_britney
         }
-
+        val classify = if (ensemble_score > 0) "spam" else "ham"
+        (docid, label, ensemble_score, classify)
       })
-      .saveAsTextFile(args.output())
+    tested.saveAsTextFile(args.output())
   }
 }
