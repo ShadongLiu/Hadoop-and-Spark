@@ -23,13 +23,14 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
 import scala.collection.Map
+import scala.collection.mutable.MutableList
 
-class Conf3(args: Seq[String]) extends ScallopConf(args) {
+class ApplyEnsembleConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, model, method)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
-  val model = opt[String](descr = "model path", required = true)
-  val method = opt[String](descr = "method", required = true)
+  val model = opt[String](descr = "model", required = true)
+  val method = opt[String](descr = "method used", required = true)
   verify()
 }
 
@@ -37,7 +38,7 @@ object ApplyEnsembleSpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
-    val args = new Conf3(argv)
+    val args = new ApplyEnsembleConf(argv)
 
     log.info("Input: " + args.input())
     log.info("Output: " + args.output())
@@ -50,38 +51,24 @@ object ApplyEnsembleSpamClassifier {
     val sc = new SparkContext(conf)
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
 
-    //save the model as a broadcast value
-    val model_x = sc.textFile(args.model() + "/part-00000")
-    val w_x = model_x
-      .map(m => {
-        val tokens = m.substring(1, m.length() - 1).split(",")
-        (tokens(0).toInt, tokens(1).toDouble)
+    //save the models as a broadcast value
+    val model_path = List("/part-00000", "/part-00001", "part-00002")
+    val models = sc.textFile(args.model() + model_path)
+    val ensemble = models
+      .map(line => {
+        val elements = line.substring(1, line.length() - 1).split(",")
+        val features = elements(0).toInt
+        val trained_weights = elements(1).toDouble
+        (features, trained_weights)
       })
       .collectAsMap()
-    val w_x_Broadcast = sc.broadcast(w_x)
+    val modelBroadcast = sc.broadcast(ensemble)
 
-    val model_y = sc.textFile(args.model() + "/part-00001")
-    val w_y = model_y
-      .map(m => {
-        val tokens = m.substring(1, m.length() - 1).split(",")
-        (tokens(0).toInt, tokens(1).toDouble)
-      })
-      .collectAsMap()
-    val w_y_Broadcast = sc.broadcast(w_y)
-
-    val model_b = sc.textFile(args.model() + "/part-00002")
-    val w_britney = model_b
-      .map(m => {
-        val tokens = m.substring(1, m.length() - 1).split(",")
-        (tokens(0).toInt, tokens(1).toDouble)
-      })
-      .collectAsMap()
-    val w_britney_Broadcast = sc.broadcast(w_britney)
     // Scores a document based on its list of features.
-    def spamminess(features: Array[Int], weights: Map[Int, Double]): Double = {
+    def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
       var score = 0d
       features.foreach(
-        f => if (weights.contains(f)) score += weights(f)
+        f => if (w.contains(f)) score += w(f)
       )
       score
     }
@@ -93,21 +80,21 @@ object ApplyEnsembleSpamClassifier {
         val elements = line.split("\\s+")
         val docid = elements(0)
         val label = elements(1)
-        val features = elements.drop(2).map(_.toInt)
-        val score_x = spamminess(features, w_x_Broadcast.value)
-        val score_y = spamminess(features, w_y_Broadcast.value)
-        val score_britney = spamminess(features, w_britney_Broadcast.value)
-        var ensemble_score = 0d
-        if (method == "average") {
-          ensemble_score = (score_x + score_y + score_britney) / 3
-        } else {
-          var vote_x = if (score_x > 0) 1d else -1d
-          var vote_y = if (score_y > 0) 1d else -1d
-          var vote_britney = if (score_britney > 0) 1d else -1d
-          ensemble_score = vote_x + vote_y + vote_britney
+        val features = map(elements.drop(2).map(_.toInt))
+        var ensembleScores = MutableList[Double]()
+        for (i <- 0 until modelBroadcast.value.size) {
+          ensembleScores += spamminess(features, modelBroadcast.value.get(i).get)
         }
-        val classify = if (ensemble_score > 0) "spam" else "ham"
-        (docid, label, ensemble_score, classify)
+        if (method == "average") {
+          score = ensembleScores.sum / ensemble.size.toDouble
+        } else {
+          var score = 0
+          ensembleScores.foreach(s => {
+            if (s > 0) score +=1 else score -=1
+          })
+        }
+        val classify = if (score > 0) "spam" else "ham"
+        (docid, label, score, classify)
       })
     tested.saveAsTextFile(args.output())
   }

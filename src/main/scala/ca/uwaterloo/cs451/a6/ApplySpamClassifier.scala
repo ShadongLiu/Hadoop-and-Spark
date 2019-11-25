@@ -23,11 +23,11 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
 import org.rogach.scallop._
 
-class Conf2(args: Seq[String]) extends ScallopConf(args) {
+class ApplyClassifierConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, output, model)
   val input = opt[String](descr = "input path", required = true)
   val output = opt[String](descr = "output path", required = true)
-  val model = opt[String](descr = "model path", required = true)
+  val model = opt[String](descr = "model", required = true)
   verify()
 }
 
@@ -35,7 +35,7 @@ object ApplySpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
-    val args = new Conf2(argv)
+    val args = new ApplyClassifierConf(argv)
 
     log.info("Input: " + args.input())
     log.info("Output: " + args.output())
@@ -46,20 +46,23 @@ object ApplySpamClassifier {
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
 
     //save the model as a broadcast value
-    val model = sc.textFile(args.model() + "/part-00000")
+    val model = sc.textFile(args.model())
     val w = model
       .map(m => {
-        val tokens = m.substring(1, m.length() - 1).split(",")
-        (tokens(0).toInt, tokens(1).toDouble)
+        val elements = m.substring(1, m.length() - 1).split(",")
+        val feature = elements(0).toInt
+        val trained_weight = elements(1).toDouble
+        (feature, trained_weight)
       })
       .collectAsMap()
     val wBroadcast = sc.broadcast(w)
-    // Scores a document based on its list of features.
+    // Scores a document based on its list of new weighted features.
     def spamminess(features: Array[Int]): Double = {
       var score = 0d
-      features.foreach(
-        f => if (wBroadcast.value.contains(f)) score += wBroadcast.value(f)
-      )
+      features.foreach(f => {
+        val w = wBroadcast.value
+        if (w.contains(f)) score += w(f)
+      })
       score
     }
 
@@ -72,6 +75,7 @@ object ApplySpamClassifier {
         val label = elements(1)
         val features = elements.drop(2).map(_.toInt)
         val score = spamminess(features)
+        //spam threshold is 0
         val classify = if (score > 0) "spam" else "ham"
 
         (docid, label, score, classify)

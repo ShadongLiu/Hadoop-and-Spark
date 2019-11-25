@@ -26,11 +26,11 @@ import scala.collection.mutable.Map
 import scala.util.Random
 import scala.math.exp
 
-class Conf(args: Seq[String]) extends ScallopConf(args) {
+class TrainConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, model, shuffle)
   val input = opt[String](descr = "input path", required = true)
-  val model = opt[String](descr = "model path", required = true)
-  val shuffle = opt[Boolean](descr = "shuffle", required = false)
+  val model = opt[String](descr = "model", required = true)
+  val shuffle = opt[Boolean](descr = "shuffle")
   verify()
 }
 
@@ -38,18 +38,19 @@ object TrainSpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
   def main(argv: Array[String]) {
-    val args = new Conf(argv)
+    val args = new TrainConf(argv)
 
     log.info("Input: " + args.input())
     log.info("Model: " + args.model())
+    log.info("Shuffle: " + args.shuffle())
 
     val conf = new SparkConf().setAppName("TrainSpamClassifier")
     val sc = new SparkContext(conf)
+    //delete if the output already exists
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.model()), true)
 
     // w is the weight vector (make sure the variable is within scope)
     val w = Map[Int, Double]()
-
     // Scores a document based on its list of features.
     def spamminess(features: Array[Int]): Double = {
       var score = 0d
@@ -63,7 +64,7 @@ object TrainSpamClassifier {
       trainingSet = trainingSet
         .map(line => (Random.nextInt(), line))
         .sortByKey()
-        .map(t => t._2)
+        .map(_._2)
     }
     
     val trained = trainingSet
@@ -78,8 +79,8 @@ object TrainSpamClassifier {
       })
       .groupByKey(1)
       // Then run the trainer
-      .flatMap(p => {
-        p._2.foreach(s => {
+      .flatMap(t => {
+        t._2.foreach(s => {
           val delta = 0.002
           val isSpam = s._2
           val features = s._3
