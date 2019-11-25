@@ -54,7 +54,7 @@ object ApplyEnsembleSpamClassifier {
     log.info("Model: " + args.model())
     log.info("Method: " + args.method())
 
-    val method = args.method()
+    val method = sc.broadcast(args.method())
 
     val conf = new SparkConf().setAppName("ApplyEnsembleSpamClassifier")
     val sc = new SparkContext(conf)
@@ -94,18 +94,21 @@ object ApplyEnsembleSpamClassifier {
             modelBroadcast.value.get(i).get
           )
         }
-        var score = 0d
+
         if (method == "average") {
-          score = ensembleScores.sum / ensemble.size.toDouble
+          var score = ensembleScores.sum / ensemble.size.toDouble
+          val classify = if (score > 0) "spam" else "ham"
+          (docid, label, score, classify)
         } else {
           var score = 0d
           ensembleScores.foreach(s => {
             if (s > 0) score += 1d else score -= 1d
           })
+          val classify = if (score > 0) "spam" else "ham"
+          (docid, label, score, classify)
         }
-        val classify = if (score > 0) "spam" else "ham"
-        (docid, label, score, classify)
+
       })
-    tested.saveAsTextFile(args.output())
+      .saveAsTextFile(args.output())
   }
 }
