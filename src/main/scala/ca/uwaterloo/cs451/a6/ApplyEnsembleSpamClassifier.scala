@@ -37,6 +37,15 @@ class ApplyEnsembleConf(args: Seq[String]) extends ScallopConf(args) {
 object ApplyEnsembleSpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
+  // Scores a document based on its list of features.
+  def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
+    var score = 0d
+    features.foreach(
+      f => if (w.contains(f)) score += w(f)
+    )
+    score
+  }
+
   def main(argv: Array[String]) {
     val args = new ApplyEnsembleConf(argv)
 
@@ -69,15 +78,6 @@ object ApplyEnsembleSpamClassifier {
           .collectAsMap()
       })
     val modelBroadcast = sc.broadcast(ensemble)
-
-    // Scores a document based on its list of features.
-    def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
-      var score = 0d
-      features.foreach(
-        f => if (w.contains(f)) score += w(f)
-      )
-      score
-    }
 
     val testSet = sc.textFile(args.input())
     val tested = testSet
