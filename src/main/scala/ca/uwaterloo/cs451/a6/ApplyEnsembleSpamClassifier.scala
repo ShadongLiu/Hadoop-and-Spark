@@ -52,11 +52,10 @@ object ApplyEnsembleSpamClassifier {
     FileSystem.get(sc.hadoopConfiguration).delete(new Path(args.output()), true)
 
     //save the models as a broadcast value
-    val model_path = List("/part-00000", "/part-00001", "part-00002")
-    val models = sc.textFile(args.model() + model_path)
+    val models = List("/part-00000", "/part-00001", "part-00002")
     val ensemble = models
       .map(model => {
-        model
+        sc.textFile(args.model() + model)
           .map(line => {
             val elements = line.substring(1, line.length() - 1).split(",")
             val features = elements(0).toInt
