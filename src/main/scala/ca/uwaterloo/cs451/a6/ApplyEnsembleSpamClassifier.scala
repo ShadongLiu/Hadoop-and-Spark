@@ -36,6 +36,15 @@ class ApplyEnsembleConf(args: Seq[String]) extends ScallopConf(args) {
 object ApplyEnsembleSpamClassifier {
   val log = Logger.getLogger(getClass().getName())
 
+  // Scores a document based on its list of features.
+  def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
+    var score = 0d
+    features.foreach(
+      f => if (w.contains(f)) score += w(f)
+    )
+    score
+  }
+
   def main(argv: Array[String]) {
     val args = new ApplyEnsembleConf(argv)
 
@@ -55,36 +64,34 @@ object ApplyEnsembleSpamClassifier {
     val w_x = model_x
       .map(m => {
         val elements = m.substring(1, m.length() - 1).split(",")
-        (elements(0).toInt, elements(1).toDouble)
+        val feature = elements(0).toInt
+        val trained_weight = elements(1).toDouble
+        (feature, trained_weight)
       })
       .collectAsMap()
-    val w_x_Broadcast = sc.broadcast(w_x)
+    val x_map = sc.broadcast(w_x).value
 
     val model_y = sc.textFile(args.model() + "/part-00001")
     val w_y = model_y
       .map(m => {
         val elements = m.substring(1, m.length() - 1).split(",")
-        (elements(0).toInt, elements(1).toDouble)
+        val feature = elements(0).toInt
+        val trained_weight = elements(1).toDouble
+        (feature, trained_weight)
       })
       .collectAsMap()
-    val w_y_Broadcast = sc.broadcast(w_y)
+    val y_map = sc.broadcast(w_y).value
 
     val model_b = sc.textFile(args.model() + "/part-00002")
     val w_britney = model_b
       .map(m => {
         val elements = m.substring(1, m.length() - 1).split(",")
-        (elements(0).toInt, elements(1).toDouble)
+        val feature = elements(0).toInt
+        val trained_weight = elements(1).toDouble
+        (feature, trained_weight)
       })
       .collectAsMap()
-    val w_britney_Broadcast = sc.broadcast(w_britney)
-    // Scores a document based on its list of features.
-    def spamminess(features: Array[Int], w: Map[Int, Double]): Double = {
-      var score = 0d
-      features.foreach(
-        f => if (w.contains(f)) score += w(f)
-      )
-      score
-    }
+    val b_map = sc.broadcast(w_britney).value
 
     val testSet = sc.textFile(args.input())
     val tested = testSet
@@ -94,17 +101,18 @@ object ApplyEnsembleSpamClassifier {
         val docid = elements(0)
         val label = elements(1)
         val features = elements.drop(2).map(_.toInt)
-        val score_x = spamminess(features, w_x_Broadcast.value)
-        val score_y = spamminess(features, w_y_Broadcast.value)
-        val score_britney = spamminess(features, w_britney_Broadcast.value)
+        val score_x = spamminess(features, x_map)
+        val score_y = spamminess(features, y_map)
+        val score_britney = spamminess(features, b_map)
         var ensemble_score = 0d
         if (method == "average") {
           ensemble_score = (score_x + score_y + score_britney) / 3
         } else {
-          var vote_x = if (score_x > 0) 1d else -1d
-          var vote_y = if (score_y > 0) 1d else -1d
-          var vote_britney = if (score_britney > 0) 1d else -1d
-          ensemble_score = vote_x + vote_y + vote_britney
+          var vote = 0
+          if (score_x > 0) vote += 1 else vote -= 1
+          if (score_y > 0) vote += 1 else vote -= 1
+          if (score_britney > 0) vote += 1 else vote -= 1
+          ensemble_score = vote
         }
         val classify = if (ensemble_score > 0) "spam" else "ham"
         (docid, label, ensemble_score, classify)
