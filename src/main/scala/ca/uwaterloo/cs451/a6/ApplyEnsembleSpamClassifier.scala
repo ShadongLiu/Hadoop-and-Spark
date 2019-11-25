@@ -80,13 +80,13 @@ object ApplyEnsembleSpamClassifier {
         val elements = line.split("\\s+")
         val docid = elements(0)
         val label = elements(1)
-        val features = map(elements.drop(2).map(_.toInt))
+        val features = elements.drop(2).map(_.toInt)
         var ensembleScores = MutableList[Double]()
         for (i <- 0 until modelBroadcast.value.size) {
           ensembleScores += spamminess(features, modelBroadcast.value.get(i).get)
         }
         if (method == "average") {
-          score = ensembleScores.sum / ensemble.size.toDouble
+          var score = ensembleScores.sum / ensemble.size.toDouble
         } else {
           var score = 0
           ensembleScores.foreach(s => {
