@@ -94,7 +94,7 @@ object ApplyEnsembleSpamClassifier {
         var ensemble_score = 0d
         if (method == "average") {
           //score averaging
-          ensemble_score = (score_x + score_y + score_britney) / 3
+          ensemble_score = (score_x + score_y + score_britney) / 3.0
         } else {
           //voting
           var vote = 0

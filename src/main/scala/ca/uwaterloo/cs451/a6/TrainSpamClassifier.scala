@@ -67,6 +67,7 @@ object TrainSpamClassifier {
         .map(_._2)
     }
     
+    val delta = 0.002
     val trained = trainingSet
       .map(line => {
         // Parse input
@@ -81,7 +82,6 @@ object TrainSpamClassifier {
       // Then run the trainer
       .flatMap(t => {
         t._2.foreach(s => {
-          val delta = 0.002
           val isSpam = s._2
           val features = s._3
           val score = spamminess(features)

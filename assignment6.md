@@ -19,13 +19,13 @@ britney:
 ## Question 2  
 <pre>
 score averaging technique:   
-1-ROCA%: 12.28
+1-ROCA%: 12.09
 </pre>
 
 ## Question 3   
 <pre>
 voting technique:   
-1-ROCA%: 15.58
+1-ROCA%: 15.03
 </pre>
 
 ## Question 4   
