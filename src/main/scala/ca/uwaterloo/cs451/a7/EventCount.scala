@@ -14,7 +14,7 @@
   * limitations under the License.
   */
 
-package io.bespin.scala.spark.streaming
+package ca.uwaterloo.cs451.a7
 
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
