@@ -53,16 +53,16 @@ object TrendingArrivals {
       var prev = curState.cur
     }
     var cur = newValue.getOrElse(0).toInt
-    if((current >= 10) && (current >= (2*past))){
+    if((cur >= 10) && (cur >= (2*prev))){
         if(key == "goldman"){
-            println(s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!")
+            println(s"Number of arrivals to Goldman Sachs has doubled from $prev to $cur at $batchTime!")
         }else{
-            println(s"Number of arrivals to Citigroup has doubled from $past to $current at $batchTime!")
+            println(s"Number of arrivals to Citigroup has doubled from $prev to $cur at $batchTime!")
         }
     }
 
-    val output = (key, (current, batchTime.milliseconds, past))
-    state.update((current, batchTime.milliseconds, past))
+    val output = (key, (cur, batchTime.milliseconds, prev))
+    state.update((cur, batchTime.milliseconds, prev))
     Some(output)
 }
   def main(argv: Array[String]): Unit = {
