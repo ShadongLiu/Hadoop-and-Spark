@@ -53,15 +53,16 @@ object TrendingArrivals {
       var prev = curState.cur
     }
     var cur = newValue.getOrElse(0).toInt
+    bm = batchTime.milliseconds
     if((cur >= 10) && (cur >= (2*prev))){
         if(key == "goldman"){
-            println(s"Number of arrivals to Goldman Sachs has doubled from $prev to $cur at $batchTime!")
+            println(s"Number of arrivals to Goldman Sachs has doubled from $prev to $cur at $bm!")
         }else{
-            println(s"Number of arrivals to Citigroup has doubled from $prev to $cur at $batchTime!")
+            println(s"Number of arrivals to Citigroup has doubled from $prev to $cur at $bm!")
         }
     }
 
-    val value = tupleClass(cur = cur, batchTime.milliseconds, prev = prev)
+    val value = tupleClass(cur = cur, "%08d".format(bm), prev = prev)
     state.update(value)
     var output = (key,value)
     Some(output)
