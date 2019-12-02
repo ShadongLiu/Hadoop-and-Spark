@@ -47,8 +47,8 @@ object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
   def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[tupleClass]): Option[(String, tupleClass)] = {
-    val cur = newValue.getOrElse(0).toInt
-    val past = state.getOption.getOrElse(0).toInt
+    var cur = newValue.getOrElse(0).toInt
+    var past = state.get().cur
     if((cur >= 10) && (cur >= (2*past))){
         if(key == "goldman"){
             println(s"Number of arrivals to Goldman Sachs has doubled from $past to $cur at $batchTime!")
@@ -128,7 +128,7 @@ object TrendingArrivals {
     val snapShotStreamRDD = wc.stateSnapshots()
     snapShotStreamRDD.foreachRDD((rdd, time) => {
       var updatedRDD = rdd.map{case(k,v) => (k, (v.cur,v.time_stamp,v.past))}
-      updatedRDD.saveAsTextFiles(args.output() + "/part-" + "%08d".format(time.milliseconds))
+      updatedRDD.saveAsTextFiles(args.output() + "/part")
     })
     
 
