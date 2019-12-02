@@ -33,6 +33,8 @@ import org.rogach.scallop._
 
 import scala.collection.mutable
 
+case class tupleClass (cur: Int, time_stamp: Long, past: Int) extends Serializable
+
 class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
   mainOptions = Seq(input, checkpoint, output)
   val input = opt[String](descr = "input path", required = true)
@@ -41,30 +43,22 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
-case class tupleClass (cur: Int, timeStamp: String, prev: Int) extends Serializable 
-
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
-  def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[tupleClass]): Option[(String, tupleClass)] = {
-    var prev = 0
-    if (state.exists()) {
-      var curState = state.get()
-      var prev = curState.cur
-    }
-    var cur = newValue.getOrElse(0).toInt
-    var bm = batchTime.milliseconds
-    if((cur >= 10) && (cur >= (2*prev))){
+  def stateMap(batchTime: Time, key: String, newValue: Option[tupleClass], state: State[tupleClass]): Option[(String, tupleClass)] = {
+    val cur = newValue.getOrElse(0, 0, 0)._1
+    val past = state.getOption.getOrElse(0, 0, 0)._1
+    if((cur >= 10) && (cur >= (2*past))){
         if(key == "goldman"){
-            println(s"Number of arrivals to Goldman Sachs has doubled from $prev to $cur at $bm!")
+            println(s"Number of arrivals to Goldman Sachs has doubled from $past to $cur at $batchTime!")
         }else{
-            println(s"Number of arrivals to Citigroup has doubled from $prev to $cur at $bm!")
+            println(s"Number of arrivals to Citigroup has doubled from $past to $cur at $batchTime!")
         }
     }
-
-    val value = tupleClass(cur = cur, "%08d".format(bm), prev = prev)
-    state.update(value)
-    var output = (key,value)
+    var tuple_value = tupleClass(cur = cur, time_stamp = batchTime.milliseconds, past = past)
+    state.update(tuple_value)
+    var output = (key, tuple_value)
     Some(output)
 }
   def main(argv: Array[String]): Unit = {
@@ -129,15 +123,13 @@ object TrendingArrivals {
         Minutes(10),
         Minutes(10)
       )
+      .map(line => (line._1, (line._2, 0L, 0)))
       .mapWithState(StateSpec.function(stateMap _))
     
-    val snapShotsStreamRDD = wc.stateSnapshots()
-    snapShotsStreamRDD.foreachRDD((rdd, time) =>{
-      var updatedRDD = rdd.map{case(k,v) => (k,(v.cur,v.timeStamp,v.prev))}
-      updatedRDD.saveAsTextFile(args.output()+ "/part-"+"%08d".format(time.milliseconds))
-    })
+    wc.print()
+    wc.saveAsTextFiles(args.output() + "/part")
 
-    snapShotsStreamRDD.foreachRDD(rdd => {
+    wc.foreachRDD(rdd => {
       numCompletedRDDs.add(1L)
     })
     ssc.checkpoint(args.checkpoint())
