@@ -128,8 +128,10 @@ object TrendingArrivals {
     val snapShotStreamRDD = wc.stateSnapshots()
     snapShotStreamRDD.foreachRDD((rdd, time) => {
       var updatedRDD = rdd.map{case(k,v) => (k, (v.cur,v.time_stamp,v.past))}
-      updatedRDD.saveAsTextFiles(args.output() + "/part")
+      
     })
+    snapShotStreamRDD.print()
+    snapShotStreamRDD.saveAsTextFiles(args.output() + "/part")
     
 
     snapShotStreamRDD.foreachRDD(rdd => {
