@@ -22,15 +22,8 @@ import org.apache.log4j._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.{
-  ManualClockWrapper,
-  Minutes,
-  StreamingContext
-}
-import org.apache.spark.streaming.scheduler.{
-  StreamingListener,
-  StreamingListenerBatchCompleted
-}
+import org.apache.spark.streaming.{ManualClockWrapper,Minutes,StreamingContext}
+import org.apache.spark.streaming.scheduler.{StreamingListener,StreamingListenerBatchCompleted}
 import org.apache.spark.util.LongAccumulator
 import org.rogach.scallop._
 
@@ -55,7 +48,7 @@ object RegionEventCount {
     val spark = SparkSession
       .builder()
       .config("spark.streaming.clock", "org.apache.spark.util.ManualClock")
-      .appName("EventCount")
+      .appName("RegionEventCount")
       .getOrCreate()
 
     val numCompletedRDDs =

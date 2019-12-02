@@ -19,6 +19,10 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.log4j._
+import org.apache.spark._
+import org.apache.spark.storage._
+import org.apache.spark.streaming._
+import org.apache.spark.streaming.StreamingContext._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -114,8 +118,8 @@ object TrendingArrivals {
       .reduceByKeyAndWindow(
         (x: Int, y: Int) => x + y,
         (x: Int, y: Int) => x - y,
-        Minutes(60),
-        Minutes(60)
+        Minutes(10),
+        Minutes(10)
       )
       .map(line => (line._1, (line._2, 0L, 0)))
       .mapWithState(StateSpec.function(stateMap_))
