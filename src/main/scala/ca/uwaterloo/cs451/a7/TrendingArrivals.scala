@@ -122,7 +122,7 @@ object TrendingArrivals {
         Minutes(10)
       )
       .map(line => (line._1, (line._2, 0L, 0)))
-      .mapWithState(StateSpec.function(stateMap_))
+      .mapWithState(StateSpec.function(stateMap _))
     
     wc.print()
     wc.saveAsTextFiles(args.output() + "/part")
