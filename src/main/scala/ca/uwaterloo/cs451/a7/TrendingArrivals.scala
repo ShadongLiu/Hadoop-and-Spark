@@ -41,12 +41,18 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
   verify()
 }
 
+case class tupleClass (cur: Int, timeStamp: String, prev: Int) extends Serializable 
+
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
-  def stateMap(batchTime: Time, key: String, newValue: Option[Tuple3[Int, Long, Int]], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
-    val current = newValue.getOrElse(0, 0, 0)._1
-    val past = state.getOption.getOrElse(0, 0, 0)._1
+  def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[tupleClass]): Option[(String, tupleClass)] = {
+    var prev = 0
+    if (state.exists()) {
+      var curState = state.get()
+      var prev = curState.cur
+    }
+    var cur = newValue.getOrElse(0).toInt
     if((current >= 10) && (current >= (2*past))){
         if(key == "goldman"){
             println(s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!")
