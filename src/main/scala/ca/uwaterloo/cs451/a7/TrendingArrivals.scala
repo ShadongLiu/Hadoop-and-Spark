@@ -53,7 +53,7 @@ object TrendingArrivals {
       var prev = curState.cur
     }
     var cur = newValue.getOrElse(0).toInt
-    bm = batchTime.milliseconds
+    var bm = batchTime.milliseconds
     if((cur >= 10) && (cur >= (2*prev))){
         if(key == "goldman"){
             println(s"Number of arrivals to Goldman Sachs has doubled from $prev to $cur at $bm!")
