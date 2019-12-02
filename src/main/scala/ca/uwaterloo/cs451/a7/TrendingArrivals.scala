@@ -75,7 +75,7 @@ object TrendingArrivals {
 
     val batchDuration = Minutes(1)
     val ssc = new StreamingContext(spark.sparkContext, batchDuration)
-    val batchListener = new StreamingContextBatchCompletionListener(ssc, 24)
+    val batchListener = new StreamingContextBatchCompletionListener(ssc, 144)
     ssc.addStreamingListener(batchListener)
 
     val rdds = buildMockStream(ssc.sparkContext, args.input())
