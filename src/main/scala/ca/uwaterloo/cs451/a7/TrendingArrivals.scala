@@ -123,13 +123,16 @@ object TrendingArrivals {
         Minutes(10),
         Minutes(10)
       )
-      .map(line => (line._1, (line._2, 0L, 0)))
       .mapWithState(StateSpec.function(stateMap _))
     
-    wc.print()
-    wc.saveAsTextFiles(args.output() + "/part")
+    val snapShotStreamRDD = wc.stateSnapshots()
+    snapShotStreamRDD.foreachRDD((rdd, time) => {
+      var updatedRDD = rdd.map{case(k,v) => (k, (v.cur,v.time_stamp,v.past))}
+      updatedRDD.saveAsTextFiles(args.output() + "/part-" + "%08d".format(time.milliseconds))
+    })
+    
 
-    wc.foreachRDD(rdd => {
+    snapShotStreamRDD.foreachRDD(rdd => {
       numCompletedRDDs.add(1L)
     })
     ssc.checkpoint(args.checkpoint())
