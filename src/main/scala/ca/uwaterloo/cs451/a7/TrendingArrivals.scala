@@ -61,7 +61,7 @@ object TrendingArrivals {
         }
     }
 
-    val value = tupleclass(cur = cur, batchTime.milliseconds, prev = prev))
+    val value = tupleclass(cur = cur, batchTime.milliseconds, prev = prev)
     state.update(value)
     var output = (key,value)
     Some(output)
