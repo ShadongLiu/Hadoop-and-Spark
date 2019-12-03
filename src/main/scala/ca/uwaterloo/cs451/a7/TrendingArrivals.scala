@@ -47,7 +47,7 @@ object TrendingArrivals {
   def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[Int]): Option[(String, Tuple3[Int, Long, Int])] = {
     var past = 0
     if (state.exists()) {
-      past = state.getOption.getOrElse(0, 0, 0)._1
+      past = state.getOption.getOrElse(0)
     }
     val current = newValue.getOrElse(0)
     
