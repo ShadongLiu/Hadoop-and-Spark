@@ -45,8 +45,12 @@ object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
   def stateMap(batchTime: Time, key: String, newValue: Option[Tuple3[Int, Long, Int]], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
-    val current = newValue.getOrElse(0)._1
-    val past = state.get().current
+    var past = 0
+    if (state.exists()) {
+      past = state.getOption.getOrCreate(0,0,0)._1
+    }
+    val current = newValue.getOrElse(0,0,0)._1
+    
     if((current >= 10) && (current >= (2*past))){
         if(key == "goldman"){
             println(s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!")
