@@ -87,15 +87,15 @@ object TrendingArrivals {
     val stream = ssc.queueStream(inputData)
 
     //bounding box of interest
-    val g_lat_min = -74.0144185
-    val g_lat_max = -74.013777
-    val g_lon_min = 40.7138745
-    val g_lon_max = 40.7152275
+    val g_lon_min = -74.0144185
+    val g_lon_max = -74.013777
+    val g_lat_min = 40.7138745
+    val g_lat_max = 40.7152275
 
-    val c_lat_min = -74.012083
-    val c_lat_max = -74.009867
-    val c_lon_min = 40.720053
-    val c_lon_max = 40.7217236
+    val c_lon_min = -74.012083
+    val c_lon_max = -74.009867
+    val c_lat_min = 40.720053
+    val c_lat_max = 40.7217236
 
     val stateSpec = StateSpec.function(stateMap _)
     val wc = stream
@@ -103,18 +103,22 @@ object TrendingArrivals {
       .map(tuple => {
         val taxi_color = tuple(0)
         if (taxi_color == "yellow") {
-          (tuple(10).toDouble, tuple(11).toDouble)
+          yellow_lon = tuple(10).toDouble
+          yellow_lat = tuple(11).toDouble
+          (yellow_lon, yellow_lat)
         } else {
-          (tuple(8).toDouble, tuple(9).toDouble)
+          green_lon = tuple(8).toDouble
+          green_lat = tuple(9).toDouble
+          (green_lon, green_lat)
         }
       })
       .filter(
         pair =>
-          ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) ||
-            ((pair._1 > c_lat_min) && (pair._1 < c_lat_max) && (pair._2 > c_lon_min) && (pair._2 < c_lon_max))
+          ((pair._1 > g_lon_min) && (pair._1 < g_lon_max) && (pair._2 > g_lat_min) && (pair._2 < g_lat_max)) ||
+            ((pair._1 > c_lon_min) && (pair._1 < c_lon_max) && (pair._2 > c_lat_min) && (pair._2 < c_lat_max))
       )
       .map(pair => {
-        if ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) {
+        if ((pair._1 > g_lon_min) && (pair._1 < g_lon_max) && (pair._2 > g_lat_min) && (pair._2 < g_lat_max)) {
           ("goldman", 1)
         } else {
           ("citigroup", 1)
@@ -128,7 +132,7 @@ object TrendingArrivals {
       )
       .mapWithState(stateSpec)
       //.persist()
-
+    wc.print()
     wc.saveAsTextFiles(args.output() + "/part-")
 
     wc.foreachRDD(rdd => {
