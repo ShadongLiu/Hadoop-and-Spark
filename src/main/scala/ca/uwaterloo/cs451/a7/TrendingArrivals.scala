@@ -140,8 +140,8 @@ object TrendingArrivals {
       )
       //.map(line => (line._1, (line._2, 0L, 0)))
       .mapWithState(StateSpec.function(stateMap _))
-    //.persist()
-    wc.print()
+    .persist()
+    //wc.print()
     wc.saveAsTextFiles(args.output() + "/part")
 
     wc.foreachRDD(rdd => {
