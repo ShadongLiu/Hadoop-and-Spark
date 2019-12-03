@@ -47,7 +47,7 @@ object TrendingArrivals {
   def mappingFnc(batchTime: Time, key: String, value: Option[Int], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
     var past = 0
     if (state.exists()) {
-      past = state.getOption.getOrElse(0)
+      past = state.get()._1
     }
     val cur = value.getOrElse(0)
     if ((cur >= (2 * past)) && (cur >= 10)) {
@@ -63,7 +63,7 @@ object TrendingArrivals {
     }
 
     val output = (key, (cur, batchTime.milliseconds, past))
-    state.update(cur)
+    state.update((cur, batchTime.milliseconds,past))
     Some(output)
   }
   def main(argv: Array[String]): Unit = {
