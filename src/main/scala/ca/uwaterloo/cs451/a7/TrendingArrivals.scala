@@ -63,7 +63,8 @@ object TrendingArrivals {
     }
 
     val output = (key, (current, batchTime.milliseconds, past))
-    state.update((current, batchTime.milliseconds, past))
+    //state.update((current, batchTime.milliseconds, past))
+    state.update(current)
     Some(output)
   }
   def main(argv: Array[String]): Unit = {
