@@ -44,27 +44,26 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
-  def stateMap(batchTime: Time,key: String,newValue: Option[Int],state: State[Int]): Option[(String, (Int, Long, Int))] = {
+  def mappingFnc(batchTime: Time, key: String, value: Option[Int], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
     var past = 0
     if (state.exists()) {
       past = state.getOption.getOrElse(0)
     }
-    val current = newValue.getOrElse(0)
-    if ((current >= 10) && (current >= (2 * past))) {
+    val cur = value.getOrElse(0)
+    if ((cur >= (2 * past)) && (cur >= 10)) {
       if (key == "goldman") {
         println(
-          s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!"
+          s"Number of arrivals to Goldman Sachs has doubled from $past to $cur at $batchTime!"
         )
       } else {
         println(
-          s"Number of arrivals to Citigroup has doubled from $past to $current at $batchTime!"
+          s"Number of arrivals to Citigroup has doubled from $past to $cur at $batchTime!"
         )
       }
     }
 
-    val output = (key, (current, batchTime.milliseconds, past))
-    //state.update((current, batchTime.milliseconds, past))
-    state.update(current)
+    val output = (key, (cur, batchTime.milliseconds, past))
+    state.update(cur)
     Some(output)
   }
   def main(argv: Array[String]): Unit = {
@@ -138,10 +137,9 @@ object TrendingArrivals {
         Minutes(10),
         Minutes(10)
       )
-      //.map(line => (line._1, (line._2, 0L, 0)))
-      .mapWithState(StateSpec.function(stateMap _))
-    .persist()
-    //wc.print()
+      .mapWithState(StateSpec.function(mappingFnc _))
+      .persist()
+    
     wc.saveAsTextFiles(args.output() + "/part")
 
     wc.foreachRDD(rdd => {
