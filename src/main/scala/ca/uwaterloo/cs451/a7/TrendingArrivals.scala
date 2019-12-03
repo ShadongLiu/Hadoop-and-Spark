@@ -129,7 +129,7 @@ object TrendingArrivals {
         Minutes(10)
       )
       .mapWithState(stateSpec)
-      .persist()
+      //.persist()
 
     wc.saveAsTextFiles(args.output() + "/part-")
 
