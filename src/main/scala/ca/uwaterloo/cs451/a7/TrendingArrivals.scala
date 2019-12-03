@@ -103,12 +103,12 @@ object TrendingArrivals {
       .map(tuple => {
         val taxi_color = tuple(0)
         if (taxi_color == "yellow") {
-          yellow_lon = tuple(10).toDouble
-          yellow_lat = tuple(11).toDouble
+          var yellow_lon = tuple(10).toDouble
+          var yellow_lat = tuple(11).toDouble
           (yellow_lon, yellow_lat)
         } else {
-          green_lon = tuple(8).toDouble
-          green_lat = tuple(9).toDouble
+          var green_lon = tuple(8).toDouble
+          var green_lat = tuple(9).toDouble
           (green_lon, green_lat)
         }
       })
