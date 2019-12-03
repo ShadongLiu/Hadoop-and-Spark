@@ -44,21 +44,33 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
-  def stateMap(batchTime: Time, key: String, newValue: Option[Tuple3[Int, Long, Int]], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
-    val current = newValue.getOrElse(0, 0, 0)._1
-    val past = state.getOption.getOrElse(0, 0, 0)._1
-    if((current >= 10) && (current >= (2*past))){
-        if(key == "goldman"){
-            println(s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!")
-        }else{
-            println(s"Number of arrivals to Citigroup has doubled from $past to $current at $batchTime!")
-        }
+  def stateMap(
+      batchTime: Time,
+      key: String,
+      newValue: Option[Int],
+      state: State[Tuple3[Int, Long, Int]]
+  ): Option[(String, Tuple3[Int, Long, Int])] = {
+    var past = 0
+    if (state.exists()) {
+      past = state.getOption.getOrElse(0)
+    }
+    val current = newValue.getOrElse(0)
+    if ((current >= 10) && (current >= (2 * past))) {
+      if (key == "goldman") {
+        println(
+          s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!"
+        )
+      } else {
+        println(
+          s"Number of arrivals to Citigroup has doubled from $past to $current at $batchTime!"
+        )
+      }
     }
 
     val output = (key, (current, batchTime.milliseconds, past))
     state.update((current, batchTime.milliseconds, past))
     Some(output)
-}
+  }
   def main(argv: Array[String]): Unit = {
     val args = new TrendingArrivalsConf(argv)
 
@@ -83,33 +95,42 @@ object TrendingArrivals {
     val stream = ssc.queueStream(inputData)
 
     //bounding box of interest
-    val g_lat_min = -74.0144185
-    val g_lat_max = -74.013777
-    val g_lon_min = 40.7138745
-    val g_lon_max = 40.7152275
+    val g_lon_min = -74.0144185
+    val g_lon_max = -74.013777
+    val g_lat_min = 40.7138745
+    val g_lat_max = 40.7152275
 
-    val c_lat_min = -74.012083
-    val c_lat_max = -74.009867
-    val c_lon_min = 40.720053
-    val c_lon_max = 40.7217236
+    val c_lon_min = -74.012083
+    val c_lon_max = -74.009867
+    val c_lat_min = 40.720053
+    val c_lat_max = 40.7217236
 
     val wc = stream
       .map(_.split(","))
       .map(tuple => {
         val taxi_color = tuple(0)
         if (taxi_color == "yellow") {
-          (tuple(10).toDouble, tuple(11).toDouble)
+          var yellow_lon = tuple(10).toDouble
+          var yellow_lat = tuple(11).toDouble
+          (yellow_lon, yellow_lat)
         } else {
-          (tuple(8).toDouble, tuple(9).toDouble)
+          var green_lon = tuple(8).toDouble
+          var green_lat = tuple(9).toDouble
+          (green_lon, green_lat)
         }
       })
       .filter(
-        pair =>
-          ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) ||
-            ((pair._1 > c_lat_min) && (pair._1 < c_lat_max) && (pair._2 > c_lon_min) && (pair._2 < c_lon_max))
+        pair => {
+          val lon = pair._1
+          val lat = pair._2
+          ((lon > g_lon_min) && (lon < g_lon_max) && (lat > g_lat_min) && (lat < g_lat_max)) ||
+          ((lon > c_lon_min) && (lon < c_lon_max) && (lat > c_lat_min) && (lat < c_lat_max))
+        }
       )
       .map(pair => {
-        if ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) {
+        val lon = pair._1
+        val lat = pair._2
+        if ((lon > g_lon_min) && (lon < g_lon_max) && (lat > g_lat_min) && (lat < g_lat_max)) {
           ("goldman", 1)
         } else {
           ("citigroup", 1)
@@ -121,9 +142,9 @@ object TrendingArrivals {
         Minutes(10),
         Minutes(10)
       )
-      .map(line => (line._1, (line._2, 0L, 0)))
+      //.map(line => (line._1, (line._2, 0L, 0)))
       .mapWithState(StateSpec.function(stateMap _))
-    
+    //.persist()
     wc.print()
     wc.saveAsTextFiles(args.output() + "/part")
 
@@ -135,13 +156,20 @@ object TrendingArrivals {
 
     for (rdd <- rdds) {
       inputData += rdd
-      ManualClockWrapper.advanceManualClock(ssc,batchDuration.milliseconds,50L)
+      ManualClockWrapper.advanceManualClock(
+        ssc,
+        batchDuration.milliseconds,
+        50L
+      )
     }
 
     batchListener.waitUntilCompleted(() => ssc.stop())
   }
 
-  class StreamingContextBatchCompletionListener(val ssc: StreamingContext,val limit: Int) extends StreamingListener {
+  class StreamingContextBatchCompletionListener(
+      val ssc: StreamingContext,
+      val limit: Int
+  ) extends StreamingListener {
     def waitUntilCompleted(cleanUpFunc: () => Unit): Unit = {
       while (!sparkExSeen) {}
       cleanUpFunc()
@@ -150,7 +178,9 @@ object TrendingArrivals {
     val numBatchesExecuted = new AtomicInteger(0)
     @volatile var sparkExSeen = false
 
-    override def onBatchCompleted(batchCompleted: StreamingListenerBatchCompleted) {
+    override def onBatchCompleted(
+        batchCompleted: StreamingListenerBatchCompleted
+    ) {
       val curNumBatches = numBatchesExecuted.incrementAndGet()
       log.info(s"${curNumBatches} batches have been executed")
       if (curNumBatches == limit) {
@@ -159,7 +189,10 @@ object TrendingArrivals {
     }
   }
 
-  def buildMockStream(sc: SparkContext, directoryName: String): Array[RDD[String]] = {
+  def buildMockStream(
+      sc: SparkContext,
+      directoryName: String
+  ): Array[RDD[String]] = {
     val d = new File(directoryName)
     if (d.exists() && d.isDirectory) {
       d.listFiles
@@ -168,7 +201,9 @@ object TrendingArrivals {
         .sorted
         .map(path => sc.textFile(path))
     } else {
-      throw new IllegalArgumentException(s"$directoryName is not a valid directory containing part files!")
+      throw new IllegalArgumentException(
+        s"$directoryName is not a valid directory containing part files!"
+      )
     }
   }
 }
