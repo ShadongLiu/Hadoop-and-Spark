@@ -44,10 +44,10 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
-  def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[Tuple3[Int, String, Int]]): Option[Tuple2[String, Tuple3[Int, String, Int]]] = {
+  def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[Int]): Option[(String, (Int, String, Int))] = {
     var past = 0
     if (state.exists()) {
-      past = state.get()._1
+      past = state.getOption.getOrElse(0)
     }
     val current = newValue.getOrElse(0)
     
@@ -59,8 +59,8 @@ object TrendingArrivals {
         }
     }
 
-    val output = (key, (current, "%08d".format(batchTime.milliseconds), past))
-    state.update((current, "%08d".format(batchTime.milliseconds), past))
+    val output = (key, (current, batchTime.milliseconds.toLong, past))
+    state.update(current)
     Some(output)
 }
   def main(argv: Array[String]): Unit = {
@@ -97,6 +97,9 @@ object TrendingArrivals {
     val c_lon_min = 40.720053
     val c_lon_max = 40.7217236
 
+    val stateSpec = StateSpec.function(stateMap _)
+                            .numPartitions(2)
+                            .timeout(Minutes(10))
     val wc = stream
       .map(_.split(","))
       .map(tuple => {
@@ -125,13 +128,10 @@ object TrendingArrivals {
         Minutes(10),
         Minutes(10)
       )
-      .flatMap(line => List[Tuple2[line._1, line._2]])
-      .mapWithState(StateSpec.function(stateMap _))
-    var streamShot = wc.stateSnapshots()
-    streamShot.foreachRDD((rdd, ts) => {
-      val time = "%08d".format(ts.milliseconds)
-      rdd.saveAsTextFiles(args.output() + "/part-" + time)
-    })
+      .mapWithState(stateSpec)
+      .persist()
+
+    wc.saveAsTextFiles(args.output() + "/part-")
 
     wc.foreachRDD(rdd => {
       numCompletedRDDs.add(1L)
