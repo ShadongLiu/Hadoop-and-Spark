@@ -59,7 +59,7 @@ object TrendingArrivals {
         }
     }
 
-    val output = (key, (current, batchTime.milliseconds.toLong, past))
+    val output = (key, (current, batchTime.milliseconds, past))
     state.update(current)
     Some(output)
 }
@@ -133,7 +133,7 @@ object TrendingArrivals {
       .mapWithState(stateSpec)
       //.persist()
     wc.print()
-    wc.saveAsTextFiles(args.output() + "/part-")
+    wc.saveAsTextFiles(args.output() + "/part")
 
     wc.foreachRDD(rdd => {
       numCompletedRDDs.add(1L)
