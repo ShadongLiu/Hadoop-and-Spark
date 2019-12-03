@@ -150,11 +150,7 @@ object TrendingArrivals {
 
     for (rdd <- rdds) {
       inputData += rdd
-      ManualClockWrapper.advanceManualClock(
-        ssc,
-        batchDuration.milliseconds,
-        50L
-      )
+      ManualClockWrapper.advanceManualClock(ssc, batchDuration.milliseconds, 50L)
     }
 
     batchListener.waitUntilCompleted(() => ssc.stop())
