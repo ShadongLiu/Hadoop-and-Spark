@@ -44,8 +44,8 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
 
-  def stateMap(batchTime: Time, key: String, newValue: Option[Int], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
-    val current = newValue.getOrElse(0).toInt
+  def stateMap(batchTime: Time, key: String, newValue: Option[Tuple3[Int, Long Int]], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
+    val current = newValue.getOrElse(0)._1
     val past = state.get().current
     if((current >= 10) && (current >= (2*past))){
         if(key == "goldman"){
