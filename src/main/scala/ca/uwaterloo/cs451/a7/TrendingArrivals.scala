@@ -125,7 +125,7 @@ object TrendingArrivals {
         Minutes(10),
         Minutes(10)
       )
-      //.map(line => (line._1, (line._2, 0L, 0)))
+      .flatmap(line => List[Tuple2[line._1, line._2]])
       .mapWithState(StateSpec.function(stateMap _))
     var streamShot = wc.stateSnapshots()
     streamShot.foreachRDD((rdd, ts) => {
