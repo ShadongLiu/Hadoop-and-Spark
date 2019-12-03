@@ -1,3 +1,18 @@
+/**
+  * Bespin: reference implementations of "big data" algorithms
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 package ca.uwaterloo.cs451.a7
 
 import java.io.File
@@ -7,12 +22,12 @@ import org.apache.log4j._
 import org.apache.spark._
 import org.apache.spark.storage._
 import org.apache.spark.streaming._
-import org.apache.spark.SparkContext
 import org.apache.spark.streaming.StreamingContext._
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.{ManualClockWrapper, Minutes, StreamingContext}
-import org.apache.spark.streaming.scheduler.{StreamingListener, StreamingListenerBatchCompleted}
+import org.apache.spark.streaming.{ManualClockWrapper,Minutes,StreamingContext}
+import org.apache.spark.streaming.scheduler.{StreamingListener,StreamingListenerBatchCompleted}
 import org.apache.spark.util.LongAccumulator
 import org.rogach.scallop._
 
@@ -28,24 +43,22 @@ class TrendingArrivalsConf(args: Seq[String]) extends ScallopConf(args) {
 
 object TrendingArrivals {
   val log = Logger.getLogger(getClass().getName())
-  
 
-  def trackState(batchTime: Time, key: String, newValue: Option[Tuple3[Int, Long, Int]], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
-      val current = newValue.getOrElse(0, 0, 0)._1
-      val past = state.getOption.getOrElse(0, 0, 0)._1
-      if((current >= 10) && (current >= (2*past))){
-          if(key == "goldman"){
-              println(s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!")
-          }else{
-              println(s"Number of arrivals to Citigroup has doubled from $past to $current at $batchTime!")
-          }
-      }
+  def stateMap(batchTime: Time, key: String, newValue: Option[Tuple3[Int, Long, Int]], state: State[Tuple3[Int, Long, Int]]): Option[(String, Tuple3[Int, Long, Int])] = {
+    val current = newValue.getOrElse(0, 0, 0)._1
+    val past = state.getOption.getOrElse(0, 0, 0)._1
+    if((current >= 10) && (current >= (2*past))){
+        if(key == "goldman"){
+            println(s"Number of arrivals to Goldman Sachs has doubled from $past to $current at $batchTime!")
+        }else{
+            println(s"Number of arrivals to Citigroup has doubled from $past to $current at $batchTime!")
+        }
+    }
 
-      val output = (key, (current, batchTime.milliseconds, past))
-      state.update((current, batchTime.milliseconds, past))
-      Some(output)
-  }
-
+    val output = (key, (current, batchTime.milliseconds, past))
+    state.update((current, batchTime.milliseconds, past))
+    Some(output)
+}
   def main(argv: Array[String]): Unit = {
     val args = new TrendingArrivalsConf(argv)
 
@@ -57,51 +70,60 @@ object TrendingArrivals {
       .appName("TrendingArrivals")
       .getOrCreate()
 
-    val numCompletedRDDs = spark.sparkContext.longAccumulator("number of completed RDDs")
+    val numCompletedRDDs =
+      spark.sparkContext.longAccumulator("number of completed RDDs")
 
     val batchDuration = Minutes(1)
     val ssc = new StreamingContext(spark.sparkContext, batchDuration)
     val batchListener = new StreamingContextBatchCompletionListener(ssc, 144)
     ssc.addStreamingListener(batchListener)
 
-    val goldman_X_min = -74.0144185
-    val goldman_X_max = -74.013777
-    val goldman_Y_min = 40.7138745
-    val goldman_Y_max = 40.7152275
-
-    val citigroup_X_min = -74.012083
-    val citigroup_X_max = -74.009867
-    val citigroup_Y_min = 40.720053
-    val citigroup_Y_max = 40.7217236
-
     val rdds = buildMockStream(ssc.sparkContext, args.input())
     val inputData: mutable.Queue[RDD[String]] = mutable.Queue()
     val stream = ssc.queueStream(inputData)
 
-    val wc = stream.map(_.split(","))
+    //bounding box of interest
+    val g_lat_min = -74.0144185
+    val g_lat_max = -74.013777
+    val g_lon_min = 40.7138745
+    val g_lon_max = 40.7152275
 
-      .map(line => {
-          if(line(0) == "yellow"){
-              (line(10).toDouble, line(11).toDouble)
-          }else{
-              (line(8).toDouble, line(9).toDouble)
-          }
+    val c_lat_min = -74.012083
+    val c_lat_max = -74.009867
+    val c_lon_min = 40.720053
+    val c_lon_max = 40.7217236
+
+    val wc = stream
+      .map(_.split(","))
+      .map(tuple => {
+        val taxi_color = tuple(0)
+        if (taxi_color == "yellow") {
+          (tuple(10).toDouble, tuple(11).toDouble)
+        } else {
+          (tuple(8).toDouble, tuple(9).toDouble)
+        }
       })
-      .filter(line => ((line._1 > goldman_X_min) && (line._1 < goldman_X_max) && (line._2 > goldman_Y_min) && (line._2 < goldman_Y_max)) || ( (line._1 > citigroup_X_min) && (line._1 < citigroup_X_max) && (line._2 > citigroup_Y_min) && (line._2 < citigroup_Y_max) ))
-      .map(line => {
-          if((line._1 > goldman_X_min) && (line._1 < goldman_X_max) && (line._2 > goldman_Y_min) && (line._2 < goldman_Y_max)){
-              ("goldman", 1)
-          }else{
-              ("citigroup", 1)
-          }
+      .filter(
+        pair =>
+          ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) ||
+            ((pair._1 > c_lat_min) && (pair._1 < c_lat_max) && (pair._2 > c_lon_min) && (pair._2 < c_lon_max))
+      )
+      .map(pair => {
+        if ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) {
+          ("goldman", 1)
+        } else {
+          ("citigroup", 1)
+        }
       })
       .reduceByKeyAndWindow(
-        (x: Int, y: Int) => x + y, (x: Int, y: Int) => x - y, Minutes(10), Minutes(10))
-      //.persist()
+        (x: Int, y: Int) => x + y,
+        (x: Int, y: Int) => x - y,
+        Minutes(10),
+        Minutes(10)
+      )
       .map(line => (line._1, (line._2, 0L, 0)))
-      .mapWithState(StateSpec.function(trackState _))
-
-
+      .mapWithState(StateSpec.function(stateMap _))
+    
     wc.print()
     wc.saveAsTextFiles(args.output() + "/part")
 
@@ -113,15 +135,13 @@ object TrendingArrivals {
 
     for (rdd <- rdds) {
       inputData += rdd
-      ManualClockWrapper.advanceManualClock(ssc, batchDuration.milliseconds, 50L)
+      ManualClockWrapper.advanceManualClock(ssc,batchDuration.milliseconds,50L)
     }
 
-    batchListener.waitUntilCompleted(() =>
-      ssc.stop()
-    )
+    batchListener.waitUntilCompleted(() => ssc.stop())
   }
 
-  class StreamingContextBatchCompletionListener(val ssc: StreamingContext, val limit: Int) extends StreamingListener {
+  class StreamingContextBatchCompletionListener(val ssc: StreamingContext,val limit: Int) extends StreamingListener {
     def waitUntilCompleted(cleanUpFunc: () => Unit): Unit = {
       while (!sparkExSeen) {}
       cleanUpFunc()
@@ -144,7 +164,8 @@ object TrendingArrivals {
     if (d.exists() && d.isDirectory) {
       d.listFiles
         .filter(file => file.isFile && file.getName.startsWith("part-"))
-        .map(file => d.getAbsolutePath + "/" + file.getName).sorted
+        .map(file => d.getAbsolutePath + "/" + file.getName)
+        .sorted
         .map(path => sc.textFile(path))
     } else {
       throw new IllegalArgumentException(s"$directoryName is not a valid directory containing part files!")

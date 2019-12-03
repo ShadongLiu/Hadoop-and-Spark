@@ -64,33 +64,42 @@ object RegionEventCount {
     val stream = ssc.queueStream(inputData)
 
     //bounding box of interest
-    val g_lat_min = -74.0144185
-    val g_lat_max = -74.013777
-    val g_lon_min = 40.7138745
-    val g_lon_max = 40.7152275
+    val g_lon_min = -74.0144185
+    val g_lon_max = -74.013777
+    val g_lat_min = 40.7138745
+    val g_lat_max = 40.7152275
 
-    val c_lat_min = -74.012083
-    val c_lat_max = -74.009867
-    val c_lon_min = 40.720053
-    val c_lon_max = 40.7217236
+    val c_lon_min = -74.012083
+    val c_lon_max = -74.009867
+    val c_lat_min = 40.720053
+    val c_lat_max = 40.7217236
 
     val wc = stream
       .map(_.split(","))
       .map(tuple => {
         val taxi_color = tuple(0)
         if (taxi_color == "yellow") {
-          (tuple(10).toDouble, tuple(11).toDouble)
+          var yellow_lon = tuple(10).toDouble
+          var yellow_lat = tuple(11).toDouble
+          (yellow_lon, yellow_lat)
         } else {
-          (tuple(8).toDouble, tuple(9).toDouble)
+          var green_lon = tuple(8).toDouble
+          var green_lat = tuple(9).toDouble
+          (green_lon, green_lat)
         }
       })
       .filter(
-        pair =>
-          ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) ||
-            ((pair._1 > c_lat_min) && (pair._1 < c_lat_max) && (pair._2 > c_lon_min) && (pair._2 < c_lon_max))
+        pair =>{
+          val lon = pair._1
+          val lat = pair._2
+          ((lon > g_lon_min) && (lon < g_lon_max) && (lat > g_lat_min) && (lat < g_lat_max)) ||
+            ((lon > c_lon_min) && (lon < c_lon_max) && (lat > c_lat_min) && (lat < c_lat_max))
+        }
       )
       .map(pair => {
-        if ((pair._1 > g_lat_min) && (pair._1 < g_lat_max) && (pair._2 > g_lon_min) && (pair._2 < g_lon_max)) {
+        val lon = pair._1
+        val lat = pair._2
+        if ((lon > g_lon_min) && (lon < g_lon_max) && (lat > g_lat_min) && (lat < g_lat_max)) {
           ("goldman", 1)
         } else {
           ("citigroup", 1)
