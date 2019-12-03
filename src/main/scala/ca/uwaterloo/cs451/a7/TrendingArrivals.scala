@@ -98,8 +98,6 @@ object TrendingArrivals {
     val c_lon_max = 40.7217236
 
     val stateSpec = StateSpec.function(stateMap _)
-                            .numPartitions(2)
-                            .timeout(Minutes(10))
     val wc = stream
       .map(_.split(","))
       .map(tuple => {
