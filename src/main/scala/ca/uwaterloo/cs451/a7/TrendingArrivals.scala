@@ -49,7 +49,7 @@ object TrendingArrivals {
     if (state.exists()) {
       past = state.get()._1
     }
-    val current = newValue.getOrElse(0)._1
+    val current = newValue.getOrElse(0)
     
     if((current >= 10) && (current >= (2*past))){
         if(key == "goldman"){
