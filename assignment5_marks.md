@@ -116,7 +116,9 @@ github:ShadongLiu
 
 **Feedback :** Q2 test 1 is off by a single line but the delta is quite large. No bonus awarded for the date formatting.
 
-**Final grade**
-mark: 95.0/100.0
+**Revision**: Q2 test 1 output in logs is correct. Bonus awarded for date formatting.
 
-summary: 20822441,s599liu,ShadongLiu,95.0/100.0
+**Final grade**
+mark: 105.0/100.0
+
+summary: 20822441,s599liu,ShadongLiu,105.0/100.0
